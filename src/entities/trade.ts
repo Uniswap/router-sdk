@@ -1,13 +1,13 @@
 import { Currency, CurrencyAmount, Fraction, Percent, Price, TradeType } from '@uniswap/sdk-core'
 import { IRoute, RouteV2, RouteV3 } from './route'
-import { Pair, Route as V2RouteSDK, Trade as V2TradeSDK } from '@uniswap/v2-sdk'
-import { Pool, Route as V3RouteSDK, Trade as V3TradeSDK } from '@uniswap/v3-sdk'
+import { Route as V2RouteSDK, Trade as V2TradeSDK, Pair } from '@uniswap/v2-sdk'
+import { Route as V3RouteSDK, Trade as V3TradeSDK, Pool } from '@uniswap/v3-sdk'
 import { ZERO, ONE } from '../constants'
 import invariant from 'tiny-invariant'
 import { Protocol } from './protocol'
 
 export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType extends TradeType> {
-  public readonly routes: IRoute<TInput, TOutput>[]
+  public readonly routes: IRoute<TInput, TOutput, (Pair | Pool)>[]
   public readonly tradeType: TTradeType
   private _outputAmount: CurrencyAmount<TOutput> | undefined
   private _inputAmount: CurrencyAmount<TInput> | undefined
@@ -17,7 +17,7 @@ export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType
    * make up the trade. May consist of swaps in v2 or v3.
    */
   public readonly swaps: {
-    route: IRoute<TInput, TOutput>
+    route: IRoute<TInput, TOutput, (Pair | Pool)>
     inputAmount: CurrencyAmount<TInput>
     outputAmount: CurrencyAmount<TOutput>
   }[]
