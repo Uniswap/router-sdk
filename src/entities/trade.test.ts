@@ -112,10 +112,14 @@ describe('Trade', () => {
 
       const amount = CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(1000))
       const tradeType = TradeType.EXACT_INPUT
+      const expectedOut = await pool_0_1.getOutputAmount(amount)
+
 
       const trade = await Trade.fromRoute(route, amount, tradeType)
       expect(trade.inputAmount.currency).toEqual(token0)
       expect(trade.outputAmount.currency).toEqual(token1)
+      expect(trade.inputAmount).toEqual(amount)
+      expect(trade.outputAmount).toEqual(expectedOut[0])
       expect(trade.swaps.length).toEqual(1)
       expect(trade.routes.length).toEqual(1)
       expect(trade.tradeType).toEqual(TradeType.EXACT_INPUT)
@@ -127,10 +131,13 @@ describe('Trade', () => {
 
       const amount = CurrencyAmount.fromRawAmount(token1, JSBI.BigInt(1000))
       const tradeType = TradeType.EXACT_OUTPUT
+      const expectedIn = pair_0_1.getInputAmount(amount)[0]
 
       const trade = await Trade.fromRoute(route, amount, tradeType)
       expect(trade.inputAmount.currency).toEqual(token0)
       expect(trade.outputAmount.currency).toEqual(token1)
+      expect(trade.outputAmount).toEqual(amount)
+      expect(trade.inputAmount).toEqual(expectedIn)
       expect(trade.swaps.length).toEqual(1)
       expect(trade.routes.length).toEqual(1)
       expect(trade.tradeType).toEqual(TradeType.EXACT_OUTPUT)
@@ -160,20 +167,24 @@ describe('Trade', () => {
       const routeOriginal = new V3RouteSDK([pool_weth_0], token0, ETHER)
       const route = new RouteV3(routeOriginal)
       const amount = CurrencyAmount.fromRawAmount(ETHER, JSBI.BigInt(100))
-
+      const expectedIn = await pool_weth_0.getInputAmount(amount.wrapped)
       const trade = await Trade.fromRoute(route, amount, TradeType.EXACT_OUTPUT)
       expect(trade.inputAmount.currency).toEqual(token0)
       expect(trade.outputAmount.currency).toEqual(ETHER)
+      expect(trade.outputAmount).toEqual(amount)
+      expect(trade.inputAmount).toEqual(expectedIn[0])
     })
 
     it('can be constructed with ETHER as output for a V3 Route exact input swap', async () => {
       const routeOriginal = new V3RouteSDK([pool_weth_0], token0, ETHER)
       const route = new RouteV3(routeOriginal)
       const amount = CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(100))
-
+      const expectedOut = await pool_weth_0.getOutputAmount(amount)
       const trade = await Trade.fromRoute(route, amount, TradeType.EXACT_INPUT)
       expect(trade.inputAmount.currency).toEqual(token0)
       expect(trade.outputAmount.currency).toEqual(ETHER)
+      expect(trade.inputAmount).toEqual(amount)
+      expect(trade.outputAmount.wrapped).toEqual(expectedOut[0])
     })
 
     it('can be constructed with ETHER as input for a V2 Route exact input swap', async () => {
@@ -261,6 +272,14 @@ describe('Trade', () => {
       const routev3 = new RouteV3(routeOriginalV3)
       const amountv3 = CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(1000))
 
+      const amountIn = amountv2.add(amountv3)
+      
+      const outv2 = pair_1_2.getOutputAmount(pair_0_1.getOutputAmount(amountv2)[0])[0]
+      const out1v3 = await pool_0_1.getOutputAmount(amountv3)
+      const out2v3 = await pool_1_2.getOutputAmount(out1v3[0])
+
+      const expectedOut = outv2.add(out2v3[0])
+
       const trade = await Trade.fromRoutes(
         [{ routev2, amount: amountv2 }],
         [{ routev3, amount: amountv3 }],
@@ -269,6 +288,8 @@ describe('Trade', () => {
 
       expect(trade.inputAmount.currency).toEqual(token0)
       expect(trade.outputAmount.currency).toEqual(token2)
+      expect(trade.inputAmount).toEqual(amountIn)
+      expect(trade.outputAmount).toEqual(expectedOut)
       expect(trade.swaps.length).toEqual(2)
       expect(trade.routes.length).toEqual(2)
       expect(trade.tradeType).toEqual(TradeType.EXACT_INPUT)
@@ -291,6 +312,19 @@ describe('Trade', () => {
       const route2v3 = new RouteV3(route2OriginalV3)
       const amount2v3 = CurrencyAmount.fromRawAmount(token2, JSBI.BigInt(1000))
 
+      const amountOutExpected = amountv2.add(amount2v2).add(amountv3).add(amount2v3)
+
+      // calculate expected amount in across v2 
+      const amountIn1v2 = pair_0_1.getInputAmount(pair_1_2.getInputAmount(amountv2)[0])
+      const amountIn2v2 = pair_weth_0.getInputAmount(pair_weth_2.getInputAmount(amount2v2)[0])
+      // calculate expected amount in across v3
+      const amountIn1v3 = await pool_1_2.getInputAmount(amountv3)
+      const amountIn2v3 = await pool_0_1.getInputAmount(amountIn1v3[0])
+      const amountIn3v3 = await pool_weth_2.getInputAmount(amount2v3)
+      const amountIn4v3 = await pool_weth_0.getInputAmount(amountIn3v3[0])
+      // calculate total expected amount in
+      const expectedIn = amountIn1v2[0].add(amountIn2v2[0]).add(amountIn2v3[0]).add(amountIn4v3[0])
+
       const trade = await Trade.fromRoutes(
         [
           { routev2, amount: amountv2 },
@@ -305,6 +339,8 @@ describe('Trade', () => {
 
       expect(trade.inputAmount.currency).toEqual(token0)
       expect(trade.outputAmount.currency).toEqual(token2)
+      expect(trade.outputAmount).toEqual(amountOutExpected)
+      expect(trade.inputAmount).toEqual(expectedIn)
       expect(trade.swaps.length).toEqual(4)
       expect(trade.routes.length).toEqual(4)
       expect(trade.tradeType).toEqual(TradeType.EXACT_OUTPUT)
@@ -482,7 +518,7 @@ describe('Trade', () => {
     })
   })
   describe('#worstExecutionPrice', () => {
-    describe(' exact input swaps', () => {
+    describe('tradeType = EXACT_INPUT', () => {
       const routev3 = new V3RouteSDK([pool_0_1, pool_1_2], token0, token2)
       const route2v3 = new V3RouteSDK([pool_0_2], token0, token2)
 
@@ -514,7 +550,7 @@ describe('Trade', () => {
       })
 
       it('throws if less than 0', () => {
-        expect(() => exactInV3.minimumAmountOut(new Percent(-1, 100))).toThrow('SLIPPAGE_TOLERANCE')
+        expect(() => exactInV3.worstExecutionPrice(new Percent(-1, 100))).toThrow('SLIPPAGE_TOLERANCE')
       })
       it('returns exact if 0', () => {
         expect(exactInV3.worstExecutionPrice(new Percent(0, 100))).toEqual(exactInV3.executionPrice)
@@ -613,7 +649,7 @@ describe('Trade', () => {
         tradeType: TradeType.EXACT_INPUT,
       })
       it('throws if less than 0', () => {
-        expect(() => exactIn.minimumAmountOut(new Percent(-1, 100))).toThrow('SLIPPAGE_TOLERANCE')
+        expect(() => exactIn.worstExecutionPrice(new Percent(-1, 100))).toThrow('SLIPPAGE_TOLERANCE')
       })
       it('returns exact if 0', () => {
         expect(exactIn.worstExecutionPrice(new Percent(0, 100))).toEqual(exactIn.executionPrice)
@@ -646,7 +682,7 @@ describe('Trade', () => {
         tradeType: TradeType.EXACT_OUTPUT,
       })
       it('throws if less than 0', () => {
-        expect(() => exactOut.minimumAmountOut(new Percent(-1, 100))).toThrow('SLIPPAGE_TOLERANCE')
+        expect(() => exactOut.worstExecutionPrice(new Percent(-1, 100))).toThrow('SLIPPAGE_TOLERANCE')
       })
       it('returns exact if 0', () => {
         expect(exactOut.worstExecutionPrice(new Percent(0, 100))).toEqual(exactOut.executionPrice)
@@ -656,6 +692,224 @@ describe('Trade', () => {
         expect(exactOut.worstExecutionPrice(new Percent(5, 100))).toEqual(new Price(token0, token2, 268, 200))
         expect(exactOut.worstExecutionPrice(new Percent(200, 100))).toEqual(new Price(token0, token2, 768, 200))
       })
+    })
+  })
+
+  describe('#minimumAmountOut', () => {
+    describe('tradeType = EXACT_INPUT', () => {
+
+      const routev3 = new V3RouteSDK([pool_0_1], token0, token1)
+      const routev2 = new V2RouteSDK([pair_0_1], token0, token1)
+
+      const inputAmount = CurrencyAmount.fromRawAmount(token0, 100)
+      const outputAmount = CurrencyAmount.fromRawAmount(token1, 100)
+      const tradeType = TradeType.EXACT_INPUT
+
+      const trade = new Trade({
+        v2Routes: [{routev2, inputAmount, outputAmount}],
+        v3Routes: [{ routev3, inputAmount, outputAmount }],
+        tradeType,
+      })
+
+      it('throws if less than 0', () => {
+        expect(() => trade.minimumAmountOut(new Percent(JSBI.BigInt(-1), 100))).toThrow('SLIPPAGE_TOLERANCE')
+      })
+
+      it('returns exact if 0', () => {
+        expect(trade.minimumAmountOut(new Percent(JSBI.BigInt(0), 100))).toEqual(trade.outputAmount)
+      })
+
+      it('returns exact if nonzero', () => {
+        expect(trade.minimumAmountOut(new Percent(JSBI.BigInt(5), 100))).toEqual(
+          CurrencyAmount.fromRawAmount(token1, 190)
+        )
+        expect(trade.minimumAmountOut(new Percent(JSBI.BigInt(200), 100))).toEqual(
+          CurrencyAmount.fromRawAmount(token1, 66)
+        )
+      })
+      describe('tradeType = EXACT_OUTPUT', () => {
+        const routev3 = new V3RouteSDK([pool_0_1], token0, token1)
+        const routev2 = new V2RouteSDK([pair_0_1], token0, token1)
+  
+        const inputAmount = CurrencyAmount.fromRawAmount(token0, 100)
+        const outputAmount = CurrencyAmount.fromRawAmount(token1, 100)
+        const tradeType = TradeType.EXACT_OUTPUT
+  
+        const trade = new Trade({
+          v2Routes: [{routev2, inputAmount, outputAmount}],
+          v3Routes: [{ routev3, inputAmount, outputAmount }],
+          tradeType,
+        })
+
+        it('throws if less than 0', () => {
+          expect(() => trade.minimumAmountOut(new Percent(JSBI.BigInt(-1), 100))).toThrow('SLIPPAGE_TOLERANCE')
+        })
+  
+        it('returns exact if 0', () => {
+          expect(trade.minimumAmountOut(new Percent(JSBI.BigInt(0), 100))).toEqual(trade.outputAmount)
+        })
+  
+        it('returns exact if nonzero', () => {
+          expect(trade.minimumAmountOut(new Percent(JSBI.BigInt(5), 100))).toEqual(
+            CurrencyAmount.fromRawAmount(token1, 200)
+          )
+        })
+      })
+    })
+  })
+
+  describe('#maximumAmountIn', () => {
+    describe('tradeType = EXACT_INPUT', () => {
+
+      const routev3 = new V3RouteSDK([pool_0_1], token0, token1)
+      const routev2 = new V2RouteSDK([pair_0_1], token0, token1)
+
+      const inputAmount = CurrencyAmount.fromRawAmount(token0, 100)
+      const outputAmount = CurrencyAmount.fromRawAmount(token1, 100)
+      const tradeType = TradeType.EXACT_INPUT
+
+      const trade = new Trade({
+        v2Routes: [{routev2, inputAmount, outputAmount}],
+        v3Routes: [{ routev3, inputAmount, outputAmount }],
+        tradeType,
+      })
+
+      it('throws if less than 0', () => {
+        expect(() => trade.maximumAmountIn(new Percent(JSBI.BigInt(-1), 100))).toThrow('SLIPPAGE_TOLERANCE')
+      })
+
+      it('returns exact if 0', () => {
+        expect(trade.maximumAmountIn(new Percent(JSBI.BigInt(0), 100))).toEqual(trade.inputAmount)
+      })
+
+      it('returns exact if nonzero', () => {
+        expect(trade.maximumAmountIn(new Percent(JSBI.BigInt(5), 100))).toEqual(
+          CurrencyAmount.fromRawAmount(token0, 200)
+        )
+      })
+      describe('tradeType = EXACT_OUTPUT', () => {
+        const routev3 = new V3RouteSDK([pool_0_1], token0, token1)
+        const routev2 = new V2RouteSDK([pair_0_1], token0, token1)
+  
+        const inputAmount = CurrencyAmount.fromRawAmount(token0, 100)
+        const outputAmount = CurrencyAmount.fromRawAmount(token1, 100)
+        const tradeType = TradeType.EXACT_OUTPUT
+  
+        const trade = new Trade({
+          v2Routes: [{routev2, inputAmount, outputAmount}],
+          v3Routes: [{ routev3, inputAmount, outputAmount }],
+          tradeType,
+        })
+
+        it('throws if less than 0', () => {
+          expect(() => trade.maximumAmountIn(new Percent(JSBI.BigInt(-1), 100))).toThrow('SLIPPAGE_TOLERANCE')
+        })
+  
+        it('returns exact if 0', () => {
+          expect(trade.maximumAmountIn(new Percent(JSBI.BigInt(0), 100))).toEqual(trade.inputAmount)
+        })
+  
+        it('returns exact if nonzero', () => {
+          expect(trade.maximumAmountIn(new Percent(JSBI.BigInt(5), 100))).toEqual(
+            CurrencyAmount.fromRawAmount(token0, 210)
+          )
+          expect(trade.maximumAmountIn(new Percent(JSBI.BigInt(200), 100))).toEqual(
+            CurrencyAmount.fromRawAmount(token0, 600)
+          )
+        })
+      })
+    })
+  })
+  // v3 sdk price impact tests
+  describe('#priceImpact', () => {
+    describe('tradeType = EXACT_INPUT', () => {
+      const routev3 = new V3RouteSDK([pool_0_1, pool_1_2], token0, token2)
+
+      const trade = new Trade({
+        v2Routes: [],
+        v3Routes: [
+          {
+            routev3,
+            inputAmount: CurrencyAmount.fromRawAmount(token0, 100),
+            outputAmount: CurrencyAmount.fromRawAmount(token2, 69)
+          }
+        ],
+        tradeType: TradeType.EXACT_INPUT
+      })
+
+      it('is cached', () => {
+        expect(trade.priceImpact === trade.priceImpact).toStrictEqual(true)
+      })
+      it('is correct', () => {
+        expect(trade.priceImpact.toSignificant(3)).toEqual('17.2')
+      })
+    })
+    describe('tradeType = EXACT_OUTPUT', () => {
+
+      const routev3 = new V3RouteSDK([pool_0_1, pool_1_2], token0, token2)
+      const exactOut = new Trade({
+        v2Routes: [],
+        v3Routes: [
+          {
+            routev3,
+            inputAmount: CurrencyAmount.fromRawAmount(token0, 156),
+            outputAmount: CurrencyAmount.fromRawAmount(token2, 100)
+          }
+        ],
+        tradeType: TradeType.EXACT_OUTPUT
+      })
+
+      it('is cached', () => {
+        expect(exactOut.priceImpact === exactOut.priceImpact).toStrictEqual(true)
+      })
+      it('is correct', () => {
+        expect(exactOut.priceImpact.toSignificant(3)).toEqual('23.1')
+      })
+    })
+  })
+
+  describe('#executionPrice', () => {
+    it ('is correct for tradeType = EXACT_INPUT', async () => {
+      const routeOriginalV2 = new V2RouteSDK([pair_0_1], token0, token1)
+      const routev2 = new RouteV2(routeOriginalV2)
+      const amountv2 = CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(100))
+
+      const routeOriginalV3 = new V3RouteSDK([pool_0_1], token0, token1)
+      const routev3 = new RouteV3(routeOriginalV3)
+      const amountv3 = CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(100))
+
+      const expectedOutV3 = await pool_0_1.getOutputAmount(amountv3)
+      const expectedOut = expectedOutV3[0].add(pair_0_1.getOutputAmount(amountv2)[0])
+
+      const trade = await Trade.fromRoutes(
+        [{ routev2, amount: amountv2 }],
+        [{ routev3, amount: amountv3 }],
+        TradeType.EXACT_INPUT
+      )
+      const expectedPrice = new Price(token0, token1, CurrencyAmount.fromRawAmount(token0, 200).quotient, expectedOut.quotient)
+      expect(trade.executionPrice).toEqual(expectedPrice)
+
+    })
+    it('is correct for tradeType = EXACT_INPUT', async () => {
+      const routeOriginalV2 = new V2RouteSDK([pair_0_1], token0, token1)
+      const routev2 = new RouteV2(routeOriginalV2)
+      const amountv2 = CurrencyAmount.fromRawAmount(token1, JSBI.BigInt(100))
+
+      const routeOriginalV3 = new V3RouteSDK([pool_0_1], token0, token1)
+      const routev3 = new RouteV3(routeOriginalV3)
+      const amountv3 = CurrencyAmount.fromRawAmount(token1, JSBI.BigInt(100))
+
+      const expectedInV3 = await pool_0_1.getInputAmount(amountv3)
+      const expectedIn = expectedInV3[0].add(pair_0_1.getInputAmount(amountv2)[0])
+
+      const trade = await Trade.fromRoutes(
+        [{ routev2, amount: amountv2 }],
+        [{ routev3, amount: amountv3 }],
+        TradeType.EXACT_OUTPUT
+      )
+      const expectedPrice = new Price(token0, token1, expectedIn.quotient, CurrencyAmount.fromRawAmount(token1, 200).quotient)
+      expect(trade.executionPrice).toEqual(expectedPrice)
+
     })
   })
 })
