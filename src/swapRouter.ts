@@ -1,23 +1,27 @@
 import { Interface } from '@ethersproject/abi'
-import { Currency, CurrencyAmount, Percent, TradeType, validateAndParseAddress } from '@uniswap/sdk-core'
+import { Currency, CurrencyAmount, Percent, TradeType, validateAndParseAddress, WETH9 } from '@uniswap/sdk-core'
+import invariant from 'tiny-invariant'
 import { abi } from '@uniswap/swap-router-contracts/artifacts/contracts/interfaces/ISwapRouter02.sol/ISwapRouter02.json'
 import { Trade as V2Trade } from '@uniswap/v2-sdk'
 import {
+  AddLiquidityOptions,
   encodeRouteToPath,
   FeeOptions,
   MethodParameters,
+  NonfungiblePositionManager,
   Payments,
   PermitOptions,
+  Position,
   SelfPermit,
   toHex,
   Trade as V3Trade,
 } from '@uniswap/v3-sdk'
 import JSBI from 'jsbi'
-import invariant from 'tiny-invariant'
 import { ADDRESS_THIS, MSG_SENDER } from './constants'
+import { ApproveAndCall } from './approveAndCall'
+import { Trade } from './entities/trade'
 import { Protocol } from './entities/protocol'
 import { RouteV2, RouteV3 } from './entities/route'
-import { Trade } from './entities/trade'
 import { MulticallExtended, Validation } from './multicallExtended'
 import { PaymentsExtended } from './paymentsExtended'
 
@@ -174,19 +178,23 @@ export abstract class SwapRouter {
     return calldatas
   }
 
-  /**
-   * Produces the on-chain method name to call and the hex encoded parameters to pass as arguments for a given trade.
-   * @param trade to produce call parameters for
-   * @param options options for the call parameters
-   */
-  public static swapCallParameters(
+  private static encodeSwaps(
     trades:
       | Trade<Currency, Currency, TradeType>
       | V2Trade<Currency, Currency, TradeType>
       | V3Trade<Currency, Currency, TradeType>
       | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[],
-    options: SwapOptions
-  ): MethodParameters {
+    options: SwapOptions,
+    isSwapAndAdd?: boolean
+  ): {
+    calldatas: string[]
+    sampleTrade: V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>
+    routerMustCustody: boolean
+    inputIsNative: boolean
+    outputIsNative: boolean
+    totalAmountIn: CurrencyAmount<Currency>
+    totalAmountOut: CurrencyAmount<Currency>
+  } {
     // If dealing with an instance of the aggregated Trade object, unbundle it to individual V2Trade and V3Trade objects.
     if (trades instanceof Trade) {
       invariant(
@@ -216,7 +224,6 @@ export abstract class SwapRouter {
           )
         }
       }
-
       trades = v2Andv3Trades
     }
 
@@ -242,31 +249,20 @@ export abstract class SwapRouter {
 
     const calldatas: string[] = []
 
-    const ZERO_IN: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(sampleTrade.inputAmount.currency, 0)
-    const ZERO_OUT: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(sampleTrade.outputAmount.currency, 0)
-
-    const totalAmountOut: CurrencyAmount<Currency> = trades.reduce(
-      (sum, trade) => sum.add(trade.minimumAmountOut(options.slippageTolerance)),
-      ZERO_OUT
-    )
-
     const inputIsNative = sampleTrade.inputAmount.currency.isNative
     const outputIsNative = sampleTrade.outputAmount.currency.isNative
 
-    // flag for whether a refund needs to happen
-    //   1. when paying in ETH, but with an uncertain input amount
-    const mustRefund = inputIsNative && sampleTrade.tradeType === TradeType.EXACT_OUTPUT
     // flag for whether funds should be send first to the router
     //   1. when receiving ETH (which much be unwrapped from WETH)
     //   2. when a fee on the output is being taken
-    //   3. when there are >1 exact input trades. this one isn't strictly necessary,
+    //   3. when performing swap and add
+    //   4. when there are >1 exact input trades. this one isn't strictly necessary,
     //      but typically we want to perform an aggregated slippage check
     const routerMustCustody =
-      outputIsNative || !!options.fee || (trades.length > 1 && sampleTrade.tradeType === TradeType.EXACT_INPUT)
-
-    const totalValue: CurrencyAmount<Currency> = inputIsNative
-      ? trades.reduce((sum, trade) => sum.add(trade.maximumAmountIn(options.slippageTolerance)), ZERO_IN)
-      : ZERO_IN
+      outputIsNative ||
+      !!options.fee ||
+      !!isSwapAndAdd ||
+      (trades.length > 1 && sampleTrade.tradeType === TradeType.EXACT_INPUT)
 
     // encode permit if necessary
     if (options.inputTokenPermit) {
@@ -283,6 +279,38 @@ export abstract class SwapRouter {
         }
       }
     }
+
+    const ZERO_IN: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(sampleTrade.inputAmount.currency, 0)
+    const ZERO_OUT: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(sampleTrade.outputAmount.currency, 0)
+
+    const totalAmountOut: CurrencyAmount<Currency> = trades.reduce(
+      (sum, trade) => sum.add(trade.minimumAmountOut(options.slippageTolerance)),
+      ZERO_OUT
+    )
+
+    const totalAmountIn: CurrencyAmount<Currency> = trades.reduce(
+      (sum, trade) => sum.add(trade.maximumAmountIn(options.slippageTolerance)),
+      ZERO_IN
+    )
+
+    return { calldatas, sampleTrade, routerMustCustody, inputIsNative, outputIsNative, totalAmountIn, totalAmountOut }
+  }
+
+  /**
+   * Produces the on-chain method name to call and the hex encoded parameters to pass as arguments for a given trade.
+   * @param trade to produce call parameters for
+   * @param options options for the call parameters
+   */
+  public static swapCallParameters(
+    trades:
+      | Trade<Currency, Currency, TradeType>
+      | V2Trade<Currency, Currency, TradeType>
+      | V3Trade<Currency, Currency, TradeType>
+      | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[],
+    options: SwapOptions
+  ): MethodParameters {
+    const { calldatas, sampleTrade, routerMustCustody, inputIsNative, outputIsNative, totalAmountIn, totalAmountOut } =
+      SwapRouter.encodeSwaps(trades, options)
 
     // unwrap
     if (routerMustCustody) {
@@ -304,14 +332,106 @@ export abstract class SwapRouter {
       }
     }
 
-    // refund
-    if (mustRefund) {
+    // must refund when paying in ETH, but with an uncertain input amount
+    if (inputIsNative && sampleTrade.tradeType === TradeType.EXACT_OUTPUT) {
       calldatas.push(Payments.encodeRefundETH())
     }
 
     return {
       calldata: MulticallExtended.encodeMulticall(calldatas, options.deadlineOrPreviousBlockhash),
-      value: toHex(totalValue.quotient),
+      value: toHex(inputIsNative ? totalAmountIn.quotient : ZERO),
     }
+  }
+
+  /**
+   * Produces the on-chain method name to call and the hex encoded parameters to pass as arguments for a given trade.
+   * @param trade to produce call parameters for
+   * @param options options for the call parameters
+   */
+  public static swapAndAddCallParameters(
+    trades:
+      | Trade<Currency, Currency, TradeType>
+      | V2Trade<Currency, Currency, TradeType>
+      | V3Trade<Currency, Currency, TradeType>
+      | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[],
+    options: SwapOptions,
+    position: Position,
+    addLiquidityOptions: AddLiquidityOptions
+  ): MethodParameters {
+    const {
+      calldatas,
+      inputIsNative,
+      outputIsNative,
+      totalAmountIn: totalAmountSwapped,
+      totalAmountOut,
+    } = SwapRouter.encodeSwaps(trades, options, true)
+
+    const zeroForOne = position.pool.token0 === totalAmountSwapped.currency.wrapped
+    const { positionAmountIn, positionAmountOut } = SwapRouter.getPositionAmounts(position, zeroForOne)
+
+    // if tokens are native they will be converted to WETH9
+    const tokenIn = inputIsNative ? WETH9[1] : positionAmountIn.currency.wrapped
+    const tokenOut = outputIsNative ? WETH9[1] : positionAmountOut.currency.wrapped
+
+    // if swap output does not make up whole outputTokenBalanceDesired, pull in remaining tokens for adding liquidity
+    const amountOutRemaining = positionAmountOut.subtract(totalAmountOut.wrapped)
+    if (amountOutRemaining.greaterThan(CurrencyAmount.fromRawAmount(positionAmountOut.currency, 0))) {
+      // if output is native, convert value to WETH9, else pull ERC20 token
+      outputIsNative
+        ? calldatas.push(
+            SwapRouter.INTERFACE.encodeFunctionData('pay', [
+              WETH9[1].address,
+              ADDRESS_THIS,
+              ADDRESS_THIS,
+              amountOutRemaining.quotient,
+            ])
+          )
+        : calldatas.push(PaymentsExtended.encodePull(tokenOut, amountOutRemaining.quotient))
+    }
+
+    // if input is native, convert to WETH9, else pull ERC20 token
+    inputIsNative
+      ? calldatas.push(
+          SwapRouter.INTERFACE.encodeFunctionData('pay', [
+            WETH9[1].address,
+            ADDRESS_THIS,
+            ADDRESS_THIS,
+            positionAmountIn.quotient,
+          ])
+        )
+      : calldatas.push(PaymentsExtended.encodePull(tokenIn, positionAmountIn.quotient))
+
+    // approve token balances to NFTManager
+    calldatas.push(ApproveAndCall.encodeApproveMax(tokenIn))
+    calldatas.push(ApproveAndCall.encodeApproveMax(tokenOut))
+
+    // encode NFTManager add liquidity
+    calldatas.push(
+      ApproveAndCall.encodeCallPositionManager([
+        NonfungiblePositionManager.addCallParameters(position, addLiquidityOptions).calldata,
+      ])
+    )
+
+    // sweep remaining tokens
+    inputIsNative
+      ? calldatas.push(PaymentsExtended.encodeUnwrapWETH9(ZERO))
+      : calldatas.push(PaymentsExtended.encodeSweepToken(tokenIn, ZERO))
+    outputIsNative
+      ? calldatas.push(PaymentsExtended.encodeUnwrapWETH9(ZERO))
+      : calldatas.push(PaymentsExtended.encodeSweepToken(tokenOut, ZERO))
+
+    return {
+      calldata: MulticallExtended.encodeMulticall(calldatas, options.deadlineOrPreviousBlockhash),
+      value: toHex(inputIsNative ? totalAmountSwapped.add(positionAmountIn).quotient : ZERO),
+    }
+  }
+
+  private static getPositionAmounts(position: Position, zeroForOne: boolean): { positionAmountIn: CurrencyAmount<Currency>, positionAmountOut: CurrencyAmount<Currency> } {
+    const { amount0, amount1 } = position.mintAmounts
+    const currencyAmount0 = CurrencyAmount.fromRawAmount(position.pool.token0, amount0)
+    const currencyAmount1 = CurrencyAmount.fromRawAmount(position.pool.token1, amount1)
+
+    const [positionAmountIn, positionAmountOut] = zeroForOne ? [currencyAmount0, currencyAmount1] : [currencyAmount1, currencyAmount0]
+    return { positionAmountIn, positionAmountOut }
   }
 }
