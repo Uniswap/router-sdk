@@ -426,12 +426,17 @@ export abstract class SwapRouter {
     }
   }
 
-  private static getPositionAmounts(position: Position, zeroForOne: boolean): { positionAmountIn: CurrencyAmount<Currency>, positionAmountOut: CurrencyAmount<Currency> } {
+  private static getPositionAmounts(
+    position: Position,
+    zeroForOne: boolean
+  ): { positionAmountIn: CurrencyAmount<Currency>; positionAmountOut: CurrencyAmount<Currency> } {
     const { amount0, amount1 } = position.mintAmounts
     const currencyAmount0 = CurrencyAmount.fromRawAmount(position.pool.token0, amount0)
     const currencyAmount1 = CurrencyAmount.fromRawAmount(position.pool.token1, amount1)
 
-    const [positionAmountIn, positionAmountOut] = zeroForOne ? [currencyAmount0, currencyAmount1] : [currencyAmount1, currencyAmount0]
+    const [positionAmountIn, positionAmountOut] = zeroForOne
+      ? [currencyAmount0, currencyAmount1]
+      : [currencyAmount1, currencyAmount0]
     return { positionAmountIn, positionAmountOut }
   }
 }
