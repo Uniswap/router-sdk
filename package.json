@@ -1,7 +1,10 @@
 {
   "name": "@uniswap/router-sdk",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.6",
   "description": "An sdk for routing swaps using Uniswap v2 and Uniswap v3.",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -25,9 +28,9 @@
   "dependencies": {
     "@ethersproject/abi": "^5.5.0",
     "@uniswap/sdk-core": "^3.0.1",
-    "@uniswap/swap-router-contracts": "^1.0.0-beta.2",
+    "@uniswap/swap-router-contracts": "^1.0.0-beta.4",
     "@uniswap/v2-sdk": "^3.0.1",
-    "@uniswap/v3-sdk": "^3.6.2"
+    "@uniswap/v3-sdk": "^3.7.1"
   },
   "devDependencies": {
     "@types/jest": "^24.0.25",
