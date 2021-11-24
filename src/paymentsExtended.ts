@@ -30,7 +30,7 @@ export abstract class PaymentsExtended {
       return PaymentsExtended.INTERFACE.encodeFunctionData('unwrapWETH9WithFee(uint256,uint256,address)', [
         toHex(amountMinimum),
         feeBips,
-        feeRecipient
+        feeRecipient,
       ])
     } else {
       return PaymentsExtended.INTERFACE.encodeFunctionData('unwrapWETH9(uint256)', [toHex(amountMinimum)])
@@ -56,10 +56,13 @@ export abstract class PaymentsExtended {
         token.address,
         toHex(amountMinimum),
         feeBips,
-        feeRecipient
+        feeRecipient,
       ])
     } else {
-      return PaymentsExtended.INTERFACE.encodeFunctionData('sweepToken(address,uint256)', [token.address, toHex(amountMinimum)])
+      return PaymentsExtended.INTERFACE.encodeFunctionData('sweepToken(address,uint256)', [
+        token.address,
+        toHex(amountMinimum),
+      ])
     }
   }
 
