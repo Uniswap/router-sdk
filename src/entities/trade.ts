@@ -1,13 +1,13 @@
 import { Currency, CurrencyAmount, Fraction, Percent, Price, TradeType } from '@uniswap/sdk-core'
-import { IRoute, RouteV2, RouteV3 } from './route'
-import { Route as V2RouteSDK, Trade as V2TradeSDK, Pair } from '@uniswap/v2-sdk'
-import { Route as V3RouteSDK, Trade as V3TradeSDK, Pool } from '@uniswap/v3-sdk'
-import { ZERO, ONE } from '../constants'
+import { Pair, Route as V2RouteSDK, Trade as V2TradeSDK } from '@uniswap/v2-sdk'
+import { Pool, Route as V3RouteSDK, Trade as V3TradeSDK } from '@uniswap/v3-sdk'
 import invariant from 'tiny-invariant'
+import { ONE, ZERO } from '../constants'
 import { Protocol } from './protocol'
+import { IRoute, RouteV2, RouteV3 } from './route'
 
 export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType extends TradeType> {
-  public readonly routes: IRoute<TInput, TOutput, (Pair | Pool)>[]
+  public readonly routes: IRoute<TInput, TOutput, Pair | Pool>[]
   public readonly tradeType: TTradeType
   private _outputAmount: CurrencyAmount<TOutput> | undefined
   private _inputAmount: CurrencyAmount<TInput> | undefined
@@ -17,7 +17,7 @@ export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType
    * make up the trade. May consist of swaps in v2 or v3.
    */
   public readonly swaps: {
-    route: IRoute<TInput, TOutput, (Pair | Pool)>
+    route: IRoute<TInput, TOutput, Pair | Pool>
     inputAmount: CurrencyAmount<TInput>
     outputAmount: CurrencyAmount<TOutput>
   }[]
@@ -81,11 +81,10 @@ export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType
     const poolAddressSet = new Set<string>()
     for (const { route } of this.swaps) {
       for (const pool of route.pools) {
-        if (route.protocol === Protocol.V3) {
-          const poolV3 = pool as Pool
-          poolAddressSet.add(Pool.getAddress(poolV3.token0, poolV3.token1, poolV3.fee))
+        if (route.protocol == Protocol.V3) {
+          poolAddressSet.add(Pool.getAddress(pool.token0, pool.token1, (pool as Pool).fee))
         } else {
-          const pair = pool as Pair
+          const pair = pool
           poolAddressSet.add(Pair.getAddress(pair.token0, pair.token1))
         }
       }
