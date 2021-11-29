@@ -260,11 +260,7 @@ export abstract class SwapRouter {
     //   3. when performing swap and add
     //   4. when there are >1 exact input trades. this one isn't strictly necessary,
     //      but typically we want to perform an aggregated slippage check
-    const routerMustCustody =
-      outputIsNative ||
-      !!options.fee ||
-      !!isSwapAndAdd ||
-      performAggregatedSlippageCheck
+    const routerMustCustody = outputIsNative || !!options.fee || !!isSwapAndAdd || performAggregatedSlippageCheck
 
     // encode permit if necessary
     if (options.inputTokenPermit) {
