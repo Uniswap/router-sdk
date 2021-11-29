@@ -376,27 +376,13 @@ export abstract class SwapRouter {
     if (amountOutRemaining.greaterThan(CurrencyAmount.fromRawAmount(positionAmountOut.currency, 0))) {
       // if output is native, convert value to WETH9, else pull ERC20 token
       outputIsNative
-        ? calldatas.push(
-            SwapRouter.INTERFACE.encodeFunctionData('pay', [
-              WETH9[1].address,
-              ADDRESS_THIS,
-              ADDRESS_THIS,
-              amountOutRemaining.quotient,
-            ])
-          )
+        ? calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('wrapETH', [amountOutRemaining.quotient]))
         : calldatas.push(PaymentsExtended.encodePull(tokenOut, amountOutRemaining.quotient))
     }
 
     // if input is native, convert to WETH9, else pull ERC20 token
     inputIsNative
-      ? calldatas.push(
-          SwapRouter.INTERFACE.encodeFunctionData('pay', [
-            WETH9[1].address,
-            ADDRESS_THIS,
-            ADDRESS_THIS,
-            positionAmountIn.quotient,
-          ])
-        )
+      ? calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('wrapETH', [positionAmountIn.quotient]))
       : calldatas.push(PaymentsExtended.encodePull(tokenIn, positionAmountIn.quotient))
 
     // approve token balances to NFTManager
