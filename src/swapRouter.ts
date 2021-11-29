@@ -354,22 +354,26 @@ export abstract class SwapRouter {
       | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[],
     options: SwapOptions,
     position: Position,
-    addLiquidityOptions: AddLiquidityOptions
+    addLiquidityOptions: AddLiquidityOptions,
+    mustApproveTokenIn: boolean,
+    mustApproveTokenOut: boolean,
   ): MethodParameters {
     const {
       calldatas,
       inputIsNative,
       outputIsNative,
+      sampleTrade,
       totalAmountIn: totalAmountSwapped,
       totalAmountOut,
     } = SwapRouter.encodeSwaps(trades, options, true)
 
+    const chainId = sampleTrade.route.chainId
     const zeroForOne = position.pool.token0 === totalAmountSwapped.currency.wrapped
     const { positionAmountIn, positionAmountOut } = SwapRouter.getPositionAmounts(position, zeroForOne)
 
     // if tokens are native they will be converted to WETH9
-    const tokenIn = inputIsNative ? WETH9[1] : positionAmountIn.currency.wrapped
-    const tokenOut = outputIsNative ? WETH9[1] : positionAmountOut.currency.wrapped
+    const tokenIn = inputIsNative ? WETH9[chainId] : positionAmountIn.currency.wrapped
+    const tokenOut = outputIsNative ? WETH9[chainId] : positionAmountOut.currency.wrapped
 
     // if swap output does not make up whole outputTokenBalanceDesired, pull in remaining tokens for adding liquidity
     const amountOutRemaining = positionAmountOut.subtract(totalAmountOut.wrapped)
@@ -386,8 +390,8 @@ export abstract class SwapRouter {
       : calldatas.push(PaymentsExtended.encodePull(tokenIn, positionAmountIn.quotient))
 
     // approve token balances to NFTManager
-    calldatas.push(ApproveAndCall.encodeApproveMax(tokenIn))
-    calldatas.push(ApproveAndCall.encodeApproveMax(tokenOut))
+    if (mustApproveTokenIn) calldatas.push(ApproveAndCall.encodeApproveMax(tokenIn))
+    if (mustApproveTokenOut) calldatas.push(ApproveAndCall.encodeApproveMax(tokenOut))
 
     // encode NFTManager add liquidity
     calldatas.push(
