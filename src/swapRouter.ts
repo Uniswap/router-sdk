@@ -259,11 +259,7 @@ export abstract class SwapRouter {
     //   2. when a fee on the output is being taken
     //   3. when performing swap and add
     //   4. when performing an aggregated slippage check
-    const routerMustCustody =
-      outputIsNative ||
-      !!options.fee ||
-      !!isSwapAndAdd ||
-      performAggregatedSlippageCheck
+    const routerMustCustody = outputIsNative || !!options.fee || !!isSwapAndAdd || performAggregatedSlippageCheck
 
     // encode permit if necessary
     if (options.inputTokenPermit) {
