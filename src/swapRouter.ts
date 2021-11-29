@@ -356,7 +356,7 @@ export abstract class SwapRouter {
     position: Position,
     addLiquidityOptions: AddLiquidityOptions,
     mustApproveTokenIn: boolean,
-    mustApproveTokenOut: boolean,
+    mustApproveTokenOut: boolean
   ): MethodParameters {
     const {
       calldatas,

@@ -699,7 +699,7 @@ describe('SwapRouter', () => {
             position,
             addLiquidityOptions,
             false,
-            false,
+            false
           )
           expect(methodParameters.calldata).toEqual(expectedCalldata)
         })
@@ -737,7 +737,7 @@ describe('SwapRouter', () => {
             position,
             addLiquidityOptions,
             false,
-            false,
+            false
           )
           expect(methodParameters.calldata).toEqual(expectedCalldata)
         })
@@ -769,7 +769,7 @@ describe('SwapRouter', () => {
             position,
             addLiquidityOptions,
             false,
-            false,
+            false
           )
           expect(methodParameters.calldata).toEqual(expectedCalldata)
         })
