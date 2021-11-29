@@ -1,6 +1,5 @@
 import { Interface } from '@ethersproject/abi'
 import { Currency, CurrencyAmount, Percent, TradeType, validateAndParseAddress, WETH9 } from '@uniswap/sdk-core'
-import invariant from 'tiny-invariant'
 import { abi } from '@uniswap/swap-router-contracts/artifacts/contracts/interfaces/ISwapRouter02.sol/ISwapRouter02.json'
 import { Trade as V2Trade } from '@uniswap/v2-sdk'
 import {
@@ -16,6 +15,7 @@ import {
   toHex,
   Trade as V3Trade,
 } from '@uniswap/v3-sdk'
+import invariant from 'tiny-invariant'
 import JSBI from 'jsbi'
 import { ADDRESS_THIS, MSG_SENDER } from './constants'
 import { ApproveAndCall } from './approveAndCall'
@@ -258,9 +258,12 @@ export abstract class SwapRouter {
     //   1. when receiving ETH (which much be unwrapped from WETH)
     //   2. when a fee on the output is being taken
     //   3. when performing swap and add
-    //   4. when there are >1 exact input trades. this one isn't strictly necessary,
-    //      but typically we want to perform an aggregated slippage check
-    const routerMustCustody = outputIsNative || !!options.fee || !!isSwapAndAdd || performAggregatedSlippageCheck
+    //   4. when performing an aggregated slippage check
+    const routerMustCustody =
+      outputIsNative ||
+      !!options.fee ||
+      !!isSwapAndAdd ||
+      performAggregatedSlippageCheck
 
     // encode permit if necessary
     if (options.inputTokenPermit) {
