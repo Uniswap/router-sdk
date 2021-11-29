@@ -314,7 +314,7 @@ export abstract class SwapRouter {
     const { calldatas, sampleTrade, routerMustCustody, inputIsNative, outputIsNative, totalAmountIn, totalAmountOut } =
       SwapRouter.encodeSwaps(trades, options)
 
-    // unwrap
+    // unwrap or sweep
     if (routerMustCustody) {
       if (outputIsNative) {
         calldatas.push(PaymentsExtended.encodeUnwrapWETH9(totalAmountOut.quotient, options.recipient, options.fee))
