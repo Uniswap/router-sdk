@@ -378,7 +378,8 @@ export abstract class SwapRouter {
     // if swap output does not make up whole outputTokenBalanceDesired, pull in remaining tokens for adding liquidity
     const amountOutRemaining = positionAmountOut.subtract(totalAmountOut.wrapped)
     if (amountOutRemaining.greaterThan(CurrencyAmount.fromRawAmount(positionAmountOut.currency, 0))) {
-      // if output is native, convert value to WETH9, else pull ERC20 token
+      // if output is native, this means the remaining portion is included as native value in the transaction
+      // and must be wrapped. Otherwise, pull in remaining ERC20 token.
       outputIsNative
         ? calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('wrapETH', [amountOutRemaining.quotient]))
         : calldatas.push(PaymentsExtended.encodePull(tokenOut, amountOutRemaining.quotient))
@@ -408,9 +409,18 @@ export abstract class SwapRouter {
       ? calldatas.push(PaymentsExtended.encodeUnwrapWETH9(ZERO))
       : calldatas.push(PaymentsExtended.encodeSweepToken(tokenOut, ZERO))
 
+    let value: JSBI
+    if (inputIsNative) {
+      value = totalAmountSwapped.add(positionAmountIn).quotient
+    } else if (outputIsNative) {
+      value = amountOutRemaining.quotient
+    } else {
+      value = ZERO
+    }
+
     return {
       calldata: MulticallExtended.encodeMulticall(calldatas, options.deadlineOrPreviousBlockhash),
-      value: toHex(inputIsNative ? totalAmountSwapped.add(positionAmountIn).quotient : ZERO),
+      value: value.toString(),
     }
   }
 
