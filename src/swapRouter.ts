@@ -381,13 +381,13 @@ export abstract class SwapRouter {
       // if output is native, this means the remaining portion is included as native value in the transaction
       // and must be wrapped. Otherwise, pull in remaining ERC20 token.
       outputIsNative
-        ? calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('wrapETH', [amountOutRemaining.quotient]))
+        ? calldatas.push(PaymentsExtended.encodeWrapETH(amountOutRemaining.quotient))
         : calldatas.push(PaymentsExtended.encodePull(tokenOut, amountOutRemaining.quotient))
     }
 
     // if input is native, convert to WETH9, else pull ERC20 token
     inputIsNative
-      ? calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('wrapETH', [positionAmountIn.quotient]))
+      ? calldatas.push(PaymentsExtended.encodeWrapETH(positionAmountIn.quotient))
       : calldatas.push(PaymentsExtended.encodePull(tokenIn, positionAmountIn.quotient))
 
     // approve token balances to NFTManager
@@ -411,7 +411,7 @@ export abstract class SwapRouter {
 
     let value: JSBI
     if (inputIsNative) {
-      value = totalAmountSwapped.add(positionAmountIn).quotient
+      value = totalAmountSwapped.wrapped.add(positionAmountIn.wrapped).quotient
     } else if (outputIsNative) {
       value = amountOutRemaining.quotient
     } else {
