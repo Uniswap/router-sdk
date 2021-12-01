@@ -18,7 +18,7 @@ import {
 import invariant from 'tiny-invariant'
 import JSBI from 'jsbi'
 import { ADDRESS_THIS, MSG_SENDER } from './constants'
-import { ApproveAndCall } from './approveAndCall'
+import { ApproveAndCall, ApprovalTypes } from './approveAndCall'
 import { Trade } from './entities/trade'
 import { Protocol } from './entities/protocol'
 import { RouteV2, RouteV3 } from './entities/route'
@@ -355,8 +355,8 @@ export abstract class SwapRouter {
     options: SwapOptions,
     position: Position,
     addLiquidityOptions: AddLiquidityOptions,
-    mustApproveTokenIn: boolean,
-    mustApproveTokenOut: boolean
+    tokenInApprovalType: ApprovalTypes,
+    tokenOutApprovalType: ApprovalTypes
   ): MethodParameters {
     const {
       calldatas,
@@ -391,8 +391,10 @@ export abstract class SwapRouter {
       : calldatas.push(PaymentsExtended.encodePull(tokenIn, positionAmountIn.quotient))
 
     // approve token balances to NFTManager
-    if (mustApproveTokenIn) calldatas.push(ApproveAndCall.encodeApproveMax(tokenIn))
-    if (mustApproveTokenOut) calldatas.push(ApproveAndCall.encodeApproveMax(tokenOut))
+    if (tokenInApprovalType !== ApprovalTypes.NOT_REQUIRED)
+      calldatas.push(SwapRouter.encodeApprove(tokenIn, tokenInApprovalType))
+    if (tokenOutApprovalType !== ApprovalTypes.NOT_REQUIRED)
+      calldatas.push(SwapRouter.encodeApprove(tokenOut, tokenOutApprovalType))
 
     // encode NFTManager add liquidity
     calldatas.push(
@@ -436,5 +438,20 @@ export abstract class SwapRouter {
       ? [currencyAmount0, currencyAmount1]
       : [currencyAmount1, currencyAmount0]
     return { positionAmountIn, positionAmountOut }
+  }
+
+  private static encodeApprove(token: Currency, approvalType: ApprovalTypes): string {
+    switch (approvalType) {
+      case ApprovalTypes.MAX:
+        return ApproveAndCall.encodeApproveMax(token.wrapped)
+      case ApprovalTypes.MAX_MINUS_ONE:
+        return ApproveAndCall.encodeApproveMaxMinusOne(token.wrapped)
+      case ApprovalTypes.ZERO_THEN_MAX:
+        return ApproveAndCall.encodeApproveZeroThenMax(token.wrapped)
+      case ApprovalTypes.ZERO_THEN_MAX_MINUS_ONE:
+        return ApproveAndCall.encodeApproveZeroThenMaxMinusOne(token.wrapped)
+      default:
+        throw 'Error: invalid ApprovalType'
+    }
   }
 }

@@ -13,6 +13,7 @@ import {
 } from '@uniswap/v3-sdk'
 import JSBI from 'jsbi'
 import { SwapRouter, Trade } from '.'
+import { ApprovalTypes } from './approveAndCall'
 
 describe('SwapRouter', () => {
   const ETHER = Ether.onChain(1)
@@ -698,8 +699,8 @@ describe('SwapRouter', () => {
             { slippageTolerance },
             position,
             addLiquidityOptions,
-            false,
-            false
+            ApprovalTypes.NOT_REQUIRED,
+            ApprovalTypes.NOT_REQUIRED
           )
           expect(methodParameters.calldata).toEqual(expectedCalldata)
         })
@@ -736,8 +737,8 @@ describe('SwapRouter', () => {
             { slippageTolerance },
             position,
             addLiquidityOptions,
-            false,
-            false
+            ApprovalTypes.NOT_REQUIRED,
+            ApprovalTypes.NOT_REQUIRED
           )
           expect(methodParameters.calldata).toEqual(expectedCalldata)
         })
@@ -768,8 +769,8 @@ describe('SwapRouter', () => {
             { slippageTolerance },
             position,
             addLiquidityOptions,
-            false,
-            false
+            ApprovalTypes.NOT_REQUIRED,
+            ApprovalTypes.NOT_REQUIRED
           )
           expect(methodParameters.calldata).toEqual(expectedCalldata)
         })
@@ -800,8 +801,8 @@ describe('SwapRouter', () => {
             { slippageTolerance },
             position,
             addLiquidityOptions,
-            true,
-            true
+            ApprovalTypes.MAX,
+            ApprovalTypes.MAX
           )
           expect(methodParameters.calldata).toEqual(expectedCalldata)
         })
@@ -832,8 +833,8 @@ describe('SwapRouter', () => {
             { slippageTolerance },
             position,
             addLiquidityOptions,
-            true,
-            true
+            ApprovalTypes.MAX,
+            ApprovalTypes.MAX
           )
           expect(methodParameters.calldata).toEqual(expectedCalldata)
         })
@@ -864,8 +865,8 @@ describe('SwapRouter', () => {
             { slippageTolerance },
             position,
             addLiquidityOptions,
-            true,
-            true
+            ApprovalTypes.MAX,
+            ApprovalTypes.MAX
           )
           expect(methodParameters.calldata).toEqual(expectedCalldata)
         })
