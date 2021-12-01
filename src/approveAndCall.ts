@@ -1,7 +1,7 @@
 import { Interface } from '@ethersproject/abi'
 import invariant from 'tiny-invariant'
 import { abi } from '@uniswap/swap-router-contracts/artifacts/contracts/interfaces/IApproveAndCall.sol/IApproveAndCall.json'
-import { Token } from '@uniswap/sdk-core'
+import { Currency, Token } from '@uniswap/sdk-core'
 import { NonfungiblePositionManager } from '@uniswap/v3-sdk'
 
 export enum ApprovalTypes {
@@ -44,6 +44,21 @@ export abstract class ApproveAndCall {
     } else {
       const encodedMulticall = NonfungiblePositionManager.INTERFACE.encodeFunctionData('multicall', [calldatas])
       return ApproveAndCall.INTERFACE.encodeFunctionData('callPositionManager', [encodedMulticall])
+    }
+  }
+
+  public static encodeApprove(token: Currency, approvalType: ApprovalTypes): string {
+    switch (approvalType) {
+      case ApprovalTypes.MAX:
+        return ApproveAndCall.encodeApproveMax(token.wrapped)
+      case ApprovalTypes.MAX_MINUS_ONE:
+        return ApproveAndCall.encodeApproveMaxMinusOne(token.wrapped)
+      case ApprovalTypes.ZERO_THEN_MAX:
+        return ApproveAndCall.encodeApproveZeroThenMax(token.wrapped)
+      case ApprovalTypes.ZERO_THEN_MAX_MINUS_ONE:
+        return ApproveAndCall.encodeApproveZeroThenMaxMinusOne(token.wrapped)
+      default:
+        throw 'Error: invalid ApprovalType'
     }
   }
 }

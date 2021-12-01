@@ -392,9 +392,9 @@ export abstract class SwapRouter {
 
     // approve token balances to NFTManager
     if (tokenInApprovalType !== ApprovalTypes.NOT_REQUIRED)
-      calldatas.push(SwapRouter.encodeApprove(tokenIn, tokenInApprovalType))
+      calldatas.push(ApproveAndCall.encodeApprove(tokenIn, tokenInApprovalType))
     if (tokenOutApprovalType !== ApprovalTypes.NOT_REQUIRED)
-      calldatas.push(SwapRouter.encodeApprove(tokenOut, tokenOutApprovalType))
+      calldatas.push(ApproveAndCall.encodeApprove(tokenOut, tokenOutApprovalType))
 
     // encode NFTManager add liquidity
     calldatas.push(
@@ -438,20 +438,5 @@ export abstract class SwapRouter {
       ? [currencyAmount0, currencyAmount1]
       : [currencyAmount1, currencyAmount0]
     return { positionAmountIn, positionAmountOut }
-  }
-
-  private static encodeApprove(token: Currency, approvalType: ApprovalTypes): string {
-    switch (approvalType) {
-      case ApprovalTypes.MAX:
-        return ApproveAndCall.encodeApproveMax(token.wrapped)
-      case ApprovalTypes.MAX_MINUS_ONE:
-        return ApproveAndCall.encodeApproveMaxMinusOne(token.wrapped)
-      case ApprovalTypes.ZERO_THEN_MAX:
-        return ApproveAndCall.encodeApproveZeroThenMax(token.wrapped)
-      case ApprovalTypes.ZERO_THEN_MAX_MINUS_ONE:
-        return ApproveAndCall.encodeApproveZeroThenMaxMinusOne(token.wrapped)
-      default:
-        throw 'Error: invalid ApprovalType'
-    }
   }
 }
