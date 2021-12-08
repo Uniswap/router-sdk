@@ -368,7 +368,7 @@ export abstract class SwapRouter {
     } = SwapRouter.encodeSwaps(trades, options, true)
 
     const chainId = sampleTrade.route.chainId
-    const zeroForOne = position.pool.token0 === totalAmountSwapped.currency.wrapped
+    const zeroForOne = totalAmountSwapped.currency.wrapped.sortsBefore(totalAmountOut.currency.wrapped)
     const { positionAmountIn, positionAmountOut } = SwapRouter.getPositionAmounts(position, zeroForOne)
 
     // if tokens are native they will be converted to WETH9
