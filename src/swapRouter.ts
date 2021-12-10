@@ -311,8 +311,15 @@ export abstract class SwapRouter {
       | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[],
     options: SwapOptions
   ): MethodParameters {
-    const { calldatas, sampleTrade, routerMustCustody, inputIsNative, outputIsNative, totalAmountIn, minimumAmountOut } =
-      SwapRouter.encodeSwaps(trades, options)
+    const {
+      calldatas,
+      sampleTrade,
+      routerMustCustody,
+      inputIsNative,
+      outputIsNative,
+      totalAmountIn,
+      minimumAmountOut,
+    } = SwapRouter.encodeSwaps(trades, options)
 
     // unwrap or sweep
     if (routerMustCustody) {
@@ -383,12 +390,8 @@ export abstract class SwapRouter {
       pool: position.pool,
       tickLower: position.tickLower,
       tickUpper: position.tickUpper,
-      amount0: zeroForOne
-        ? tokenInRemaining.quotient.toString()
-        : tokenOutBalance.quotient.toString(),
-      amount1: zeroForOne
-        ? tokenOutBalance.quotient.toString()
-        : tokenInRemaining.quotient.toString(),
+      amount0: zeroForOne ? tokenInRemaining.quotient.toString() : tokenOutBalance.quotient.toString(),
+      amount1: zeroForOne ? tokenOutBalance.quotient.toString() : tokenInRemaining.quotient.toString(),
       useFullPrecision: false,
     })
 
