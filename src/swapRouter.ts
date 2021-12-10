@@ -345,6 +345,12 @@ export abstract class SwapRouter {
    * Produces the on-chain method name to call and the hex encoded parameters to pass as arguments for a given trade.
    * @param trade to produce call parameters for
    * @param options options for the call parameters
+   * @param position position with all details excepting liquidity amount, which will get filled in here.
+   * @param addLiquidityOptions Options for producing the calldata to add liquidity.
+   * @param tokenInRemaining tokenIn balance not involved in swap to be added as liquidity to position.
+   * @param tokenOutRemaining tokenOut balance not involved in swap to be pulled in for adding liquidity.
+   * @param tokenInApprovalType ApprovalType required for approving tokenIn to the nftPosition manager
+   * @param tokenOutApprovalType ApprovalType required for approving tokenOut to the nftPosition manager
    */
   public static swapAndAddCallParameters(
     trades:
@@ -355,6 +361,8 @@ export abstract class SwapRouter {
     options: SwapOptions,
     position: Position,
     addLiquidityOptions: AddLiquidityOptions,
+    tokenInRemaining: CurrencyAmount<Currency>,
+    tokenOutRemaining: CurrencyAmount<Currency>,
     tokenInApprovalType: ApprovalTypes,
     tokenOutApprovalType: ApprovalTypes
   ): MethodParameters {
@@ -369,20 +377,33 @@ export abstract class SwapRouter {
 
     const chainId = sampleTrade.route.chainId
     const zeroForOne = totalAmountSwapped.currency.wrapped.sortsBefore(minimumAmountOut.currency.wrapped)
-    const { positionAmountIn, positionAmountOut } = SwapRouter.getPositionAmounts(position, zeroForOne)
+
+    const tokenOutBalance = tokenOutRemaining.add(minimumAmountOut)
+    const positionWithLiquidity = Position.fromAmounts({
+      pool: position.pool,
+      tickLower: position.tickLower,
+      tickUpper: position.tickUpper,
+      amount0: zeroForOne
+        ? tokenInRemaining.quotient.toString()
+        : tokenOutBalance.quotient.toString(),
+      amount1: zeroForOne
+        ? tokenOutBalance.quotient.toString()
+        : tokenInRemaining.quotient.toString(),
+      useFullPrecision: false,
+    })
+
+    const { positionAmountIn, positionAmountOut } = SwapRouter.getPositionAmounts(positionWithLiquidity, zeroForOne)
 
     // if tokens are native they will be converted to WETH9
     const tokenIn = inputIsNative ? WETH9[chainId] : positionAmountIn.currency.wrapped
     const tokenOut = outputIsNative ? WETH9[chainId] : positionAmountOut.currency.wrapped
 
-    // if swap output does not make up whole outputTokenBalanceDesired, pull in remaining tokens for adding liquidity
-    const amountOutRemaining = positionAmountOut.subtract(minimumAmountOut.wrapped)
-    if (amountOutRemaining.greaterThan(CurrencyAmount.fromRawAmount(positionAmountOut.currency, 0))) {
+    if (tokenOutRemaining.greaterThan(CurrencyAmount.fromRawAmount(positionAmountOut.currency, 0))) {
       // if output is native, this means the remaining portion is included as native value in the transaction
       // and must be wrapped. Otherwise, pull in remaining ERC20 token.
       outputIsNative
-        ? calldatas.push(PaymentsExtended.encodeWrapETH(amountOutRemaining.quotient))
-        : calldatas.push(PaymentsExtended.encodePull(tokenOut, amountOutRemaining.quotient))
+        ? calldatas.push(PaymentsExtended.encodeWrapETH(tokenOutRemaining.quotient))
+        : calldatas.push(PaymentsExtended.encodePull(tokenOut, tokenOutRemaining.quotient))
     }
 
     // if input is native, convert to WETH9, else pull ERC20 token
@@ -415,7 +436,7 @@ export abstract class SwapRouter {
     if (inputIsNative) {
       value = totalAmountSwapped.wrapped.add(positionAmountIn.wrapped).quotient
     } else if (outputIsNative) {
-      value = amountOutRemaining.quotient
+      value = tokenOutRemaining.quotient
     } else {
       value = ZERO
     }
