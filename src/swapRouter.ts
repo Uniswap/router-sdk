@@ -192,7 +192,7 @@ export abstract class SwapRouter {
     inputIsNative: boolean
     outputIsNative: boolean
     totalAmountIn: CurrencyAmount<Currency>
-    totalAmountOut: CurrencyAmount<Currency>
+    minimumAmountOut: CurrencyAmount<Currency>
   } {
     // If dealing with an instance of the aggregated Trade object, unbundle it to individual V2Trade and V3Trade objects.
     if (trades instanceof Trade) {
@@ -292,7 +292,7 @@ export abstract class SwapRouter {
     const ZERO_IN: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(sampleTrade.inputAmount.currency, 0)
     const ZERO_OUT: CurrencyAmount<Currency> = CurrencyAmount.fromRawAmount(sampleTrade.outputAmount.currency, 0)
 
-    const totalAmountOut: CurrencyAmount<Currency> = trades.reduce(
+    const minimumAmountOut: CurrencyAmount<Currency> = trades.reduce(
       (sum, trade) => sum.add(trade.minimumAmountOut(options.slippageTolerance)),
       ZERO_OUT
     )
@@ -302,7 +302,7 @@ export abstract class SwapRouter {
       ZERO_IN
     )
 
-    return { calldatas, sampleTrade, routerMustCustody, inputIsNative, outputIsNative, totalAmountIn, totalAmountOut }
+    return { calldatas, sampleTrade, routerMustCustody, inputIsNative, outputIsNative, totalAmountIn, minimumAmountOut }
   }
 
   /**
@@ -318,18 +318,18 @@ export abstract class SwapRouter {
       | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[],
     options: SwapOptions
   ): MethodParameters {
-    const { calldatas, sampleTrade, routerMustCustody, inputIsNative, outputIsNative, totalAmountIn, totalAmountOut } =
+    const { calldatas, sampleTrade, routerMustCustody, inputIsNative, outputIsNative, totalAmountIn, minimumAmountOut } =
       SwapRouter.encodeSwaps(trades, options)
 
     // unwrap or sweep
     if (routerMustCustody) {
       if (outputIsNative) {
-        calldatas.push(PaymentsExtended.encodeUnwrapWETH9(totalAmountOut.quotient, options.recipient, options.fee))
+        calldatas.push(PaymentsExtended.encodeUnwrapWETH9(minimumAmountOut.quotient, options.recipient, options.fee))
       } else {
         calldatas.push(
           PaymentsExtended.encodeSweepToken(
             sampleTrade.outputAmount.currency.wrapped,
-            totalAmountOut.quotient,
+            minimumAmountOut.quotient,
             options.recipient,
             options.fee
           )
@@ -371,13 +371,13 @@ export abstract class SwapRouter {
       outputIsNative,
       sampleTrade,
       totalAmountIn: totalAmountSwapped,
-      totalAmountOut,
+      minimumAmountOut,
     } = SwapRouter.encodeSwaps(trades, options, true)
 
     // encode output token permit if necessary
     if (options.outputTokenPermit) {
-      invariant(totalAmountOut.currency.isToken, 'NON_TOKEN_PERMIT_OUTPUT')
-      calldatas.push(SelfPermit.encodePermit(totalAmountOut.currency, options.outputTokenPermit))
+      invariant(minimumAmountOut.currency.isToken, 'NON_TOKEN_PERMIT_OUTPUT')
+      calldatas.push(SelfPermit.encodePermit(minimumAmountOut.currency, options.outputTokenPermit))
     }
 
     const chainId = sampleTrade.route.chainId
@@ -389,7 +389,7 @@ export abstract class SwapRouter {
     const tokenOut = outputIsNative ? WETH9[chainId] : positionAmountOut.currency.wrapped
 
     // if swap output does not make up whole outputTokenBalanceDesired, pull in remaining tokens for adding liquidity
-    const amountOutRemaining = positionAmountOut.subtract(totalAmountOut.wrapped)
+    const amountOutRemaining = positionAmountOut.subtract(minimumAmountOut.wrapped)
     if (amountOutRemaining.greaterThan(CurrencyAmount.fromRawAmount(positionAmountOut.currency, 0))) {
       // if output is native, this means the remaining portion is included as native value in the transaction
       // and must be wrapped. Otherwise, pull in remaining ERC20 token.
