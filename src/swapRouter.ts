@@ -7,7 +7,6 @@ import {
   encodeRouteToPath,
   FeeOptions,
   MethodParameters,
-  NonfungiblePositionManager,
   Payments,
   PermitOptions,
   Position,
@@ -193,6 +192,7 @@ export abstract class SwapRouter {
     outputIsNative: boolean
     totalAmountIn: CurrencyAmount<Currency>
     minimumAmountOut: CurrencyAmount<Currency>
+    quoteAmountOut: CurrencyAmount<Currency>
   } {
     // If dealing with an instance of the aggregated Trade object, unbundle it to individual V2Trade and V3Trade objects.
     if (trades instanceof Trade) {
@@ -297,12 +297,17 @@ export abstract class SwapRouter {
       ZERO_OUT
     )
 
+    const quoteAmountOut: CurrencyAmount<Currency> = trades.reduce(
+      (sum, trade) => sum.add(trade.outputAmount),
+      ZERO_OUT
+    )
+
     const totalAmountIn: CurrencyAmount<Currency> = trades.reduce(
       (sum, trade) => sum.add(trade.maximumAmountIn(options.slippageTolerance)),
       ZERO_IN
     )
 
-    return { calldatas, sampleTrade, routerMustCustody, inputIsNative, outputIsNative, totalAmountIn, minimumAmountOut }
+    return { calldatas, sampleTrade, routerMustCustody, inputIsNative, outputIsNative, totalAmountIn, minimumAmountOut, quoteAmountOut }
   }
 
   /**
@@ -371,13 +376,13 @@ export abstract class SwapRouter {
       outputIsNative,
       sampleTrade,
       totalAmountIn: totalAmountSwapped,
-      minimumAmountOut,
+      quoteAmountOut,
     } = SwapRouter.encodeSwaps(trades, options, true)
 
     // encode output token permit if necessary
     if (options.outputTokenPermit) {
-      invariant(minimumAmountOut.currency.isToken, 'NON_TOKEN_PERMIT_OUTPUT')
-      calldatas.push(SelfPermit.encodePermit(minimumAmountOut.currency, options.outputTokenPermit))
+      invariant(quoteAmountOut.currency.isToken, 'NON_TOKEN_PERMIT_OUTPUT')
+      calldatas.push(SelfPermit.encodePermit(quoteAmountOut.currency, options.outputTokenPermit))
     }
 
     const chainId = sampleTrade.route.chainId
@@ -389,7 +394,7 @@ export abstract class SwapRouter {
     const tokenOut = outputIsNative ? WETH9[chainId] : positionAmountOut.currency.wrapped
 
     // if swap output does not make up whole outputTokenBalanceDesired, pull in remaining tokens for adding liquidity
-    const amountOutRemaining = positionAmountOut.subtract(minimumAmountOut.wrapped)
+    const amountOutRemaining = positionAmountOut.subtract(quoteAmountOut.wrapped)
     if (amountOutRemaining.greaterThan(CurrencyAmount.fromRawAmount(positionAmountOut.currency, 0))) {
       // if output is native, this means the remaining portion is included as native value in the transaction
       // and must be wrapped. Otherwise, pull in remaining ERC20 token.
@@ -411,9 +416,7 @@ export abstract class SwapRouter {
 
     // encode NFTManager add liquidity
     calldatas.push(
-      ApproveAndCall.encodeCallPositionManager([
-        NonfungiblePositionManager.addCallParameters(position, addLiquidityOptions).calldata,
-      ])
+      ApproveAndCall.encodeAddLiquidity(position, addLiquidityOptions)
     )
 
     // sweep remaining tokens
