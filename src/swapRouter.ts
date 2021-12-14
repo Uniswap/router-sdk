@@ -57,6 +57,13 @@ export interface SwapOptions {
   fee?: FeeOptions
 }
 
+export interface SwapAndAddOptions extends SwapOptions {
+  /**
+   * The optional permit parameters for pulling in remaining output token.
+   */
+  outputTokenPermit?: PermitOptions
+}
+
 /**
  * Represents the Uniswap V2 + V3 SwapRouter02, and has static methods for helping execute trades.
  */
@@ -352,7 +359,7 @@ export abstract class SwapRouter {
       | V2Trade<Currency, Currency, TradeType>
       | V3Trade<Currency, Currency, TradeType>
       | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[],
-    options: SwapOptions,
+    options: SwapAndAddOptions,
     position: Position,
     addLiquidityOptions: AddLiquidityOptions,
     tokenInApprovalType: ApprovalTypes,
@@ -366,6 +373,12 @@ export abstract class SwapRouter {
       totalAmountIn: totalAmountSwapped,
       totalAmountOut,
     } = SwapRouter.encodeSwaps(trades, options, true)
+
+    // encode output token permit if necessary
+    if (options.outputTokenPermit) {
+      invariant(totalAmountOut.currency.isToken, 'NON_TOKEN_PERMIT_OUTPUT')
+      calldatas.push(SelfPermit.encodePermit(totalAmountOut.currency, options.outputTokenPermit))
+    }
 
     const chainId = sampleTrade.route.chainId
     const zeroForOne = position.pool.token0 === totalAmountSwapped.currency.wrapped
