@@ -306,7 +306,16 @@ export abstract class SwapRouter {
       ZERO_IN
     )
 
-    return { calldatas, sampleTrade, routerMustCustody, inputIsNative, outputIsNative, totalAmountIn, minimumAmountOut, quoteAmountOut }
+    return {
+      calldatas,
+      sampleTrade,
+      routerMustCustody,
+      inputIsNative,
+      outputIsNative,
+      totalAmountIn,
+      minimumAmountOut,
+      quoteAmountOut,
+    }
   }
 
   /**
@@ -322,8 +331,15 @@ export abstract class SwapRouter {
       | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[],
     options: SwapOptions
   ): MethodParameters {
-    const { calldatas, sampleTrade, routerMustCustody, inputIsNative, outputIsNative, totalAmountIn, minimumAmountOut } =
-      SwapRouter.encodeSwaps(trades, options)
+    const {
+      calldatas,
+      sampleTrade,
+      routerMustCustody,
+      inputIsNative,
+      outputIsNative,
+      totalAmountIn,
+      minimumAmountOut,
+    } = SwapRouter.encodeSwaps(trades, options)
 
     // unwrap or sweep
     if (routerMustCustody) {
@@ -414,9 +430,7 @@ export abstract class SwapRouter {
       calldatas.push(ApproveAndCall.encodeApprove(tokenOut, tokenOutApprovalType))
 
     // encode NFTManager add liquidity
-    calldatas.push(
-      ApproveAndCall.encodeAddLiquidity(position, addLiquidityOptions, options.slippageTolerance)
-    )
+    calldatas.push(ApproveAndCall.encodeAddLiquidity(position, addLiquidityOptions, options.slippageTolerance))
 
     // sweep remaining tokens
     inputIsNative
