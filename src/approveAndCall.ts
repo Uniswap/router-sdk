@@ -1,8 +1,11 @@
 import { Interface } from '@ethersproject/abi'
 import invariant from 'tiny-invariant'
 import { abi } from '@uniswap/swap-router-contracts/artifacts/contracts/interfaces/IApproveAndCall.sol/IApproveAndCall.json'
-import { Currency, Token } from '@uniswap/sdk-core'
-import { AddLiquidityOptions, MintOptions, NonfungiblePositionManager, Position, toHex } from '@uniswap/v3-sdk'
+import { Currency, Percent, Token } from '@uniswap/sdk-core'
+import { MintSpecificOptions, IncreaseSpecificOptions, NonfungiblePositionManager, Position, toHex } from '@uniswap/v3-sdk'
+
+// condensed version of v3-sdk AddLiquidityOptions containing only necessary swap + add attributes
+export type CondensedAddLiquidityOptions = Omit<MintSpecificOptions, 'createPool'> | IncreaseSpecificOptions
 
 export enum ApprovalTypes {
   NOT_REQUIRED = 0,
@@ -10,6 +13,11 @@ export enum ApprovalTypes {
   MAX_MINUS_ONE = 2,
   ZERO_THEN_MAX = 3,
   ZERO_THEN_MAX_MINUS_ONE = 4,
+}
+
+// type guard
+export function isMint(options: CondensedAddLiquidityOptions): options is Omit<MintSpecificOptions, 'createPool'> {
+  return Object.keys(options).some(k => k === 'recipient')
 }
 
 export abstract class ApproveAndCall {
@@ -47,13 +55,8 @@ export abstract class ApproveAndCall {
     }
   }
 
-  public static encodeAddLiquidity(position: Position, addLiquidityOptions: AddLiquidityOptions): string {
-    const { amount0: amount0Min, amount1: amount1Min } = position.mintAmountsWithSlippage(addLiquidityOptions.slippageTolerance)
-
-    // type guard
-    function isMint(options: AddLiquidityOptions): options is MintOptions {
-      return Object.keys(options).some(k => k === 'recipient')
-    }
+  public static encodeAddLiquidity(position: Position, addLiquidityOptions: CondensedAddLiquidityOptions, slippageTolerance: Percent): string {
+    const { amount0: amount0Min, amount1: amount1Min } = position.mintAmountsWithSlippage(slippageTolerance)
 
     if (isMint(addLiquidityOptions)) {
       return ApproveAndCall.INTERFACE.encodeFunctionData('mint', [{

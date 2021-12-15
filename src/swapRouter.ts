@@ -3,7 +3,6 @@ import { Currency, CurrencyAmount, Percent, TradeType, validateAndParseAddress, 
 import { abi } from '@uniswap/swap-router-contracts/artifacts/contracts/interfaces/ISwapRouter02.sol/ISwapRouter02.json'
 import { Trade as V2Trade } from '@uniswap/v2-sdk'
 import {
-  AddLiquidityOptions,
   encodeRouteToPath,
   FeeOptions,
   MethodParameters,
@@ -17,7 +16,7 @@ import {
 import invariant from 'tiny-invariant'
 import JSBI from 'jsbi'
 import { ADDRESS_THIS, MSG_SENDER } from './constants'
-import { ApproveAndCall, ApprovalTypes } from './approveAndCall'
+import { ApproveAndCall, ApprovalTypes, CondensedAddLiquidityOptions } from './approveAndCall'
 import { Trade } from './entities/trade'
 import { Protocol } from './entities/protocol'
 import { RouteV2, RouteV3 } from './entities/route'
@@ -366,7 +365,7 @@ export abstract class SwapRouter {
       | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[],
     options: SwapAndAddOptions,
     position: Position,
-    addLiquidityOptions: AddLiquidityOptions,
+    addLiquidityOptions: CondensedAddLiquidityOptions,
     tokenInApprovalType: ApprovalTypes,
     tokenOutApprovalType: ApprovalTypes
   ): MethodParameters {
@@ -416,7 +415,7 @@ export abstract class SwapRouter {
 
     // encode NFTManager add liquidity
     calldatas.push(
-      ApproveAndCall.encodeAddLiquidity(position, addLiquidityOptions)
+      ApproveAndCall.encodeAddLiquidity(position, addLiquidityOptions, options.slippageTolerance)
     )
 
     // sweep remaining tokens
