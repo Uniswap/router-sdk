@@ -437,7 +437,7 @@ export abstract class SwapRouter {
       tickLower: position.tickLower,
       tickUpper: position.tickUpper,
       amount0: zeroForOne ? position.amount0.quotient.toString() : minimumAmountOut.quotient.toString(),
-      amount1: zeroForOne ? minimumAmountOut.quotient.toString() : position.amount0.quotient.toString(),
+      amount1: zeroForOne ? minimumAmountOut.quotient.toString() : position.amount1.quotient.toString(),
       useFullPrecision: false,
     })
 
