@@ -430,6 +430,8 @@ export abstract class SwapRouter {
     if (tokenOutApprovalType !== ApprovalTypes.NOT_REQUIRED)
       calldatas.push(ApproveAndCall.encodeApprove(tokenOut, tokenOutApprovalType))
 
+    // represents a position with token amounts resulting from a swap with maximum slippage
+    // hence the minimal amount out possible.
     const minimalPosition = Position.fromAmounts({
       pool: position.pool,
       tickLower: position.tickLower,
