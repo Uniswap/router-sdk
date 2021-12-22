@@ -64,7 +64,7 @@ export abstract class ApproveAndCall {
   /**
    * Encode adding liquidity to a position in the nft manager contract
    * @param position Forcasted position with expected amount out from swap
-   * @param minimalPosition Forcasted position with expected amountOut from swap with max slippage
+   * @param minimalPosition Forcasted position with custom minimal token amounts
    * @param addLiquidityOptions Options for adding liquidity
    * @param slippageTolerance Defines maximum slippage
    */
@@ -77,8 +77,8 @@ export abstract class ApproveAndCall {
     let { amount0: amount0Min, amount1: amount1Min } = position.mintAmountsWithSlippage(slippageTolerance)
 
     // position.mintAmountsWithSlippage() can create amounts not dependenable in scenarios
-    // such as range orders. Allow the option for minimum amount swapped to serve as
-    // amountMin for position.
+    // such as range orders. Allow the option to provide a position with custom minimum amounts
+    // for these scenarios
     if (JSBI.lessThan(minimalPosition.amount0.quotient, amount0Min)) {
       amount0Min = minimalPosition.amount0.quotient
     }
