@@ -83,7 +83,7 @@ export abstract class ApproveAndCall {
       amount0Min = minimalPosition.amount0.quotient
     }
     if (JSBI.lessThan(minimalPosition.amount1.quotient, amount1Min)) {
-      amount1Min = minimalPosition.amount0.quotient
+      amount1Min = minimalPosition.amount1.quotient
     }
 
     if (isMint(addLiquidityOptions)) {
