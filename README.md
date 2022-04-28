@@ -7,4 +7,4 @@ Pull requests welcome!
 
 # Uniswap Swap Router SDK
 
-This SDK is meant to facilitate interactions with the contracts in [swap-router-contracts](https://github.com/Uniswap/swap-router-contracts).
+This SDK is meant to facilitate interactions with the contracts in [swap-router-contracts](https://github.com/Uniswap/swap-router-contracts). Support is also provide for the contracts in [lp-action-contracts](https://github.com/Uniswap/lp-action-contracts).
