@@ -49,11 +49,23 @@ function getBips(numerator: CurrencyAmount<Currency>, denominator: CurrencyAmoun
   return numerator.divide(denominator).multiply(BIPS).quotient.toString()
 }
 
-export interface RemoveAndSwapOptions {
+interface ExpandedSlippageTolerance {
+  remove: Percent
+  swap: Percent
+}
+
+function isExpandedSlippageTolerance(
+  slippageTolerance: Percent | ExpandedSlippageTolerance
+): slippageTolerance is ExpandedSlippageTolerance {
+  return !!(slippageTolerance as ExpandedSlippageTolerance).remove
+}
+
+export interface RemoveAndSwapOptions<T = Percent | ExpandedSlippageTolerance> {
   /**
    * How much the execution price is allowed to move unfavorably from the trade execution price.
    */
-  slippageTolerance: Percent
+  slippageTolerance: T
+
   /**
    * The account that should receive the output. If omitted, output is sent to msg.sender.
    */
@@ -78,10 +90,10 @@ export abstract class RemoveAndSwap extends SwapRouter {
 
   private static encodeV2ExactInput(
     trade: V2Trade<Currency, Currency, TradeType>,
-    options: RemoveAndSwapOptions,
+    options: RemoveAndSwapOptions<ExpandedSlippageTolerance>,
     routerMustCustody: boolean
   ): Omit<V2ExactInput, 'amountInBips'> {
-    const { amountOut, path } = SwapRouter.parseV2Swap(trade, options.slippageTolerance)
+    const { amountOut, path } = SwapRouter.parseV2Swap(trade, options.slippageTolerance.swap)
 
     const recipient = routerMustCustody ? ADDRESS_THIS : validateAndParseAddress(options.recipient)
 
@@ -94,12 +106,12 @@ export abstract class RemoveAndSwap extends SwapRouter {
 
   private static encodeV3ExactInput(
     trade: V3Trade<Currency, Currency, TradeType>,
-    options: RemoveAndSwapOptions,
+    options: RemoveAndSwapOptions<ExpandedSlippageTolerance>,
     routerMustCustody: boolean
   ): (Omit<V3ExactInputSingle, 'amountInBips'> | Omit<V3ExactInput, 'amountInBips'>)[] {
     const data: (Omit<V3ExactInputSingle, 'amountInBips'> | Omit<V3ExactInput, 'amountInBips'>)[] = []
 
-    const parsedDatas = SwapRouter.parseV3Swap(trade, options.slippageTolerance)
+    const parsedDatas = SwapRouter.parseV3Swap(trade, options.slippageTolerance.swap)
 
     const recipient = routerMustCustody ? ADDRESS_THIS : validateAndParseAddress(options.recipient)
 
@@ -135,10 +147,19 @@ export abstract class RemoveAndSwap extends SwapRouter {
       | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[],
     options: RemoveAndSwapOptions
   ): string {
+    if (!isExpandedSlippageTolerance(options.slippageTolerance)) {
+      options.slippageTolerance = {
+        remove: options.slippageTolerance,
+        swap: options.slippageTolerance,
+      }
+    }
+
     trades = unbundleTrades(trades)
 
     const inputCurrency = trades[0].inputAmount.currency
 
+    // ensure that our slippage tolerance isn't 0 - this is highly likely to cause a tx failure
+    invariant(options.slippageTolerance.swap.greaterThan(ZERO), 'SWAP_SLIPPAGE_TOLERANCE_TOO_LOW')
     // ensure that all the inputs are the same currency
     invariant(
       trades.every((trade, _, array) => trade.inputAmount.currency.equals(array[0].inputAmount.currency)),
@@ -181,9 +202,20 @@ export abstract class RemoveAndSwap extends SwapRouter {
     for (const trade of trades) {
       if (trade instanceof V2Trade) {
         const amountInBips = getBips(trade.inputAmount, totalSwapAmount)
-        v2ExactInputs.push({ ...RemoveAndSwap.encodeV2ExactInput(trade, options, routerMustCustody), amountInBips })
+        v2ExactInputs.push({
+          ...RemoveAndSwap.encodeV2ExactInput(
+            trade,
+            options as RemoveAndSwapOptions<ExpandedSlippageTolerance>,
+            routerMustCustody
+          ),
+          amountInBips,
+        })
       } else {
-        const encodedTrades = RemoveAndSwap.encodeV3ExactInput(trade, options, routerMustCustody)
+        const encodedTrades = RemoveAndSwap.encodeV3ExactInput(
+          trade,
+          options as RemoveAndSwapOptions<ExpandedSlippageTolerance>,
+          routerMustCustody
+        )
 
         for (let i = 0; i < encodedTrades.length; i++) {
           const amountInBips = getBips(trade.swaps[i].inputAmount, totalSwapAmount)
@@ -227,8 +259,8 @@ export abstract class RemoveAndSwap extends SwapRouter {
         {
           deadline: toHex(options.deadline),
           recipient: validateAndParseAddress(options.recipient),
-          amount0Min: toHex(position.burnAmountsWithSlippage(options.slippageTolerance).amount0),
-          amount1Min: toHex(position.burnAmountsWithSlippage(options.slippageTolerance).amount1),
+          amount0Min: toHex(position.burnAmountsWithSlippage(options.slippageTolerance.remove).amount0),
+          amount1Min: toHex(position.burnAmountsWithSlippage(options.slippageTolerance.remove).amount1),
           swapToken0,
           swapEntireAmount,
           v2ExactInputs,
