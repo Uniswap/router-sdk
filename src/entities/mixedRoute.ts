@@ -41,10 +41,10 @@ export class MixedRoute<TInput extends Currency, TOutput extends Currency> {
      * Normalizes token0-token1 order and selects the next token/fee step to add to the path
      * */
     const tokenPath: Token[] = [wrappedInput]
-    for (const [i, pool] of parts.entries()) {
+    for (const [i, part] of parts.entries()) {
       const currentInputToken = tokenPath[i]
-      invariant(currentInputToken.equals(pool.token0) || currentInputToken.equals(pool.token1), 'PATH')
-      const nextToken = currentInputToken.equals(pool.token0) ? pool.token1 : pool.token0
+      invariant(currentInputToken.equals(part.token0) || currentInputToken.equals(part.token1), 'PATH')
+      const nextToken = currentInputToken.equals(part.token0) ? part.token1 : part.token0
       tokenPath.push(nextToken)
     }
 
