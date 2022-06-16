@@ -61,6 +61,8 @@ export class MixedRoute<TInput extends Currency, TOutput extends Currency> {
   /**
    * Returns the mid price of the route
    */
+
+  // TODO: this does not work for v2 pairs in the route because they calculate mid price via reserves
   public get midPrice(): Price<TInput, TOutput> {
     if (this._midPrice !== null) return this._midPrice
 
