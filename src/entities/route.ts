@@ -40,3 +40,5 @@ export class RouteV3<TInput extends Currency, TOutput extends Currency>
     this.path = v3Route.tokenPath
   }
 }
+
+// Mixed route wrapper
