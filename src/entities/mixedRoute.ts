@@ -66,26 +66,38 @@ export class MixedRoute<TInput extends Currency, TOutput extends Currency> {
   public get midPrice(): Price<TInput, TOutput> {
     if (this._midPrice !== null) return this._midPrice
 
+    const getPriceForPart = (part: TPool, nextInputIsToken0: boolean) => {
+      if (part instanceof Pair) {
+        return nextInputIsToken0
+          ? new Price(part.reserve0.currency, part.reserve1.currency, part.reserve0.quotient, part.reserve1.quotient)
+          : new Price(part.reserve1.currency, part.reserve0.currency, part.reserve1.quotient, part.reserve0.quotient)
+      } else if (part instanceof Pool) {
+        return nextInputIsToken0 ? part.token0Price : part.token1Price
+      } else {
+        throw new Error('Invalid part type')
+      }
+    }
+
     const price = this.parts.slice(1).reduce(
       ({ nextInput, price }, pool) => {
         return nextInput.equals(pool.token0)
           ? {
               nextInput: pool.token1,
-              price: price.multiply(pool.token0Price),
+              price: price.multiply(getPriceForPart(pool, true)),
             }
           : {
               nextInput: pool.token0,
-              price: price.multiply(pool.token1Price),
+              price: price.multiply(getPriceForPart(pool, false)),
             }
       },
       this.parts[0].token0.equals(this.input.wrapped)
         ? {
             nextInput: this.parts[0].token1,
-            price: this.parts[0].token0Price,
+            price: getPriceForPart(this.parts[0], true),
           }
         : {
             nextInput: this.parts[0].token0,
-            price: this.parts[0].token1Price,
+            price: getPriceForPart(this.parts[0], false),
           }
     ).price
 
