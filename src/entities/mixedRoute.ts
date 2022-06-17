@@ -61,8 +61,6 @@ export class MixedRoute<TInput extends Currency, TOutput extends Currency> {
   /**
    * Returns the mid price of the route
    */
-
-  // TODO: this does not work for v2 pairs in the route because they calculate mid price via reserves
   public get midPrice(): Price<TInput, TOutput> {
     if (this._midPrice !== null) return this._midPrice
 
@@ -74,7 +72,7 @@ export class MixedRoute<TInput extends Currency, TOutput extends Currency> {
       } else if (part instanceof Pool) {
         return nextInputIsToken0 ? part.token0Price : part.token1Price
       } else {
-        throw new Error('Invalid part type')
+        throw new Error('Invalid part type in mixed route')
       }
     }
 
