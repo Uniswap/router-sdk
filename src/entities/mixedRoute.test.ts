@@ -19,9 +19,10 @@ describe.only('MixedRoute', () => {
   const pair_0_1 = new Pair(CurrencyAmount.fromRawAmount(token0, '100'), CurrencyAmount.fromRawAmount(token1, '200'))
   const pair_0_weth = new Pair(CurrencyAmount.fromRawAmount(token0, '100'), CurrencyAmount.fromRawAmount(weth, '100'))
   const pair_1_weth = new Pair(CurrencyAmount.fromRawAmount(token1, '175'), CurrencyAmount.fromRawAmount(weth, '100'))
+  const pair_weth_2 = new Pair(CurrencyAmount.fromRawAmount(weth, '200'), CurrencyAmount.fromRawAmount(token2, '150'))
 
   describe('path', () => {
-    it('wraps original v3 route object and successfully constructs a path from the tokens', () => {
+    it('wraps pure v3 route object and successfully constructs a path from the tokens', () => {
       /// @dev since the MixedRoute sdk object lives here in router-sdk we don't need to reconstruct it
       const route = new MixedRoute([pool_0_1], token0, token1)
       expect(route.parts).toEqual([pool_0_1])
@@ -31,12 +32,30 @@ describe.only('MixedRoute', () => {
       expect(route.chainId).toEqual(1)
     })
 
-    it.only('wraps v3 and v2 route objects and successfully constructs a path from the tokens', () => {
+    it('wraps pure v2 route object and successfully constructs a path from the tokens', () => {
+      const route = new MixedRoute([pair_0_1], token0, token1)
+      expect(route.parts).toEqual([pair_0_1])
+      expect(route.tokenPath).toEqual([token0, token1])
+      expect(route.input).toEqual(token0)
+      expect(route.output).toEqual(token1)
+      expect(route.chainId).toEqual(1)
+    })
+
+    it('wraps mixed route object and successfully constructs a path from the tokens', () => {
       const route = new MixedRoute([pool_0_1, pair_1_weth], token0, weth)
       expect(route.parts).toEqual([pool_0_1, pair_1_weth])
       expect(route.tokenPath).toEqual([token0, token1, weth])
       expect(route.input).toEqual(token0)
       expect(route.output).toEqual(weth)
+      expect(route.chainId).toEqual(1)
+    })
+
+    it('wraps complex mixed route object and successfully constructs a path from the tokens', () => {
+      const route = new MixedRoute([pool_0_1, pair_1_weth, pair_weth_2], token0, token2)
+      expect(route.parts).toEqual([pool_0_1, pair_1_weth, pair_weth_2])
+      expect(route.tokenPath).toEqual([token0, token1, weth, token2])
+      expect(route.input).toEqual(token0)
+      expect(route.output).toEqual(token2)
       expect(route.chainId).toEqual(1)
     })
   })
@@ -276,7 +295,7 @@ describe.only('MixedRoute', () => {
       })
     })
 
-    describe.only('mixed route', () => {
+    describe('mixed route', () => {
       it('correct for 0 -[V3]-> 1 -[V2]-> 2', () => {
         // pool_0_1 midPrice = 0.2
         // pair 1_2 midPrice = 1.3334
