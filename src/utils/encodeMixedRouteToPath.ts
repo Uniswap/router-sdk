@@ -2,7 +2,7 @@ import { pack } from '@ethersproject/solidity'
 import { Currency, Token } from '@uniswap/sdk-core'
 import { Pool } from '@uniswap/v3-sdk'
 import { Pair } from '@uniswap/v2-sdk'
-import { MixedRoute } from '../entities/mixedRoute'
+import { MixedRouteSDK } from '../entities/mixedRoute'
 
 /// @dev We should import this from somewhere
 const V2_FEE = 8388608
@@ -12,7 +12,7 @@ const V2_FEE = 8388608
  * @param route the mixed path to convert to an encoded path
  * @param exactOutput whether the route should be encoded in reverse, for making exact output swaps
  */
-export function encodeMixedRouteToPath(route: MixedRoute<Currency, Currency>, exactOutput: boolean): string {
+export function encodeMixedRouteToPath(route: MixedRouteSDK<Currency, Currency>, exactOutput: boolean): string {
   const firstInputToken: Token = route.input.wrapped
 
   const { path, types } = route.parts.reduce(

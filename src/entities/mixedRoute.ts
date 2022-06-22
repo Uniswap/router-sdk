@@ -11,7 +11,7 @@ type TPool = Pair | Pool
  * @template TInput The input token
  * @template TOutput The output token
  */
-export class MixedRoute<TInput extends Currency, TOutput extends Currency> {
+export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
   public readonly parts: TPool[]
   public readonly tokenPath: Token[]
   public readonly input: TInput

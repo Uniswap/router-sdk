@@ -1,7 +1,7 @@
 import { CurrencyAmount, Ether, Token, WETH9 } from '@uniswap/sdk-core'
 import { Pair } from '@uniswap/v2-sdk'
 import { encodeSqrtRatioX96, FeeAmount, Pool } from '@uniswap/v3-sdk'
-import { MixedRoute } from '../entities/mixedRoute'
+import { MixedRouteSDK } from '../entities/mixedRoute'
 import { encodeMixedRouteToPath } from './encodeMixedRouteToPath'
 
 describe('#encodeMixedRouteToPath', () => {
@@ -23,23 +23,23 @@ describe('#encodeMixedRouteToPath', () => {
   const pair_1_weth = new Pair(CurrencyAmount.fromRawAmount(token1, '175'), CurrencyAmount.fromRawAmount(weth, '100'))
   const pair_2_weth = new Pair(CurrencyAmount.fromRawAmount(token2, '150'), CurrencyAmount.fromRawAmount(weth, '100'))
 
-  const route_0_V3_1 = new MixedRoute([pool_0_1_medium], token0, token1)
-  const route_0_V3_1_V3_2 = new MixedRoute([pool_0_1_medium, pool_1_2_low], token0, token2)
-  const route_0_V3_weth = new MixedRoute([pool_0_weth], token0, ETHER)
-  const route_0_V3_1_V3_weth = new MixedRoute([pool_0_1_medium, pool_1_weth], token0, ETHER)
-  const route_weth_V3_0 = new MixedRoute([pool_0_weth], ETHER, token0)
-  const route_weth_V3_0_V3_1 = new MixedRoute([pool_0_weth, pool_0_1_medium], ETHER, token1)
+  const route_0_V3_1 = new MixedRouteSDK([pool_0_1_medium], token0, token1)
+  const route_0_V3_1_V3_2 = new MixedRouteSDK([pool_0_1_medium, pool_1_2_low], token0, token2)
+  const route_0_V3_weth = new MixedRouteSDK([pool_0_weth], token0, ETHER)
+  const route_0_V3_1_V3_weth = new MixedRouteSDK([pool_0_1_medium, pool_1_weth], token0, ETHER)
+  const route_weth_V3_0 = new MixedRouteSDK([pool_0_weth], ETHER, token0)
+  const route_weth_V3_0_V3_1 = new MixedRouteSDK([pool_0_weth, pool_0_1_medium], ETHER, token1)
 
-  const route_0_V2_1 = new MixedRoute([pair_0_1], token0, token1)
-  const route_0_V2_1_V2_2 = new MixedRoute([pair_0_1, pair_1_2], token0, token2)
-  const route_weth_V2_0 = new MixedRoute([pair_0_weth], ETHER, token0)
-  const route_weth_V2_0_V2_1 = new MixedRoute([pair_0_weth, pair_0_1], ETHER, token1)
-  const route_0_V2_weth = new MixedRoute([pair_0_weth], token0, ETHER)
-  const route_0_V2_1_V2_weth = new MixedRoute([pair_0_1, pair_1_weth], token0, ETHER)
+  const route_0_V2_1 = new MixedRouteSDK([pair_0_1], token0, token1)
+  const route_0_V2_1_V2_2 = new MixedRouteSDK([pair_0_1, pair_1_2], token0, token2)
+  const route_weth_V2_0 = new MixedRouteSDK([pair_0_weth], ETHER, token0)
+  const route_weth_V2_0_V2_1 = new MixedRouteSDK([pair_0_weth, pair_0_1], ETHER, token1)
+  const route_0_V2_weth = new MixedRouteSDK([pair_0_weth], token0, ETHER)
+  const route_0_V2_1_V2_weth = new MixedRouteSDK([pair_0_1, pair_1_weth], token0, ETHER)
 
-  const route_0_V3_1_V2_weth = new MixedRoute([pool_0_1_medium, pair_1_weth], token0, ETHER)
-  const route_0_V3_weth_V2_1_V2_2 = new MixedRoute([pool_0_weth, pair_1_weth, pair_1_2], token0, token2)
-  const route_0_V3_1_v3_weth_V2_2 = new MixedRoute([pool_0_1_medium, pool_1_weth, pair_2_weth], token0, token2)
+  const route_0_V3_1_V2_weth = new MixedRouteSDK([pool_0_1_medium, pair_1_weth], token0, ETHER)
+  const route_0_V3_weth_V2_1_V2_2 = new MixedRouteSDK([pool_0_weth, pair_1_weth, pair_1_2], token0, token2)
+  const route_0_V3_1_v3_weth_V2_2 = new MixedRouteSDK([pool_0_1_medium, pool_1_weth, pair_2_weth], token0, token2)
 
   describe('pure V3', () => {
     it('packs them for exact input single hop', () => {
