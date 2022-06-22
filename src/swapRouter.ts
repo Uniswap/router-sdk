@@ -109,6 +109,7 @@ export abstract class SwapRouter {
     const calldatas: string[] = []
 
     for (const { route, inputAmount, outputAmount } of trade.swaps) {
+      console.log(trade, options.slippageTolerance.lessThan(JSBI.BigInt(0)), inputAmount)
       const amountIn: string = toHex(trade.maximumAmountIn(options.slippageTolerance, inputAmount).quotient)
       const amountOut: string = toHex(trade.minimumAmountOut(options.slippageTolerance, outputAmount).quotient)
 
