@@ -4,7 +4,7 @@ import { encodeSqrtRatioX96, FeeAmount, Pool } from '@uniswap/v3-sdk'
 import { MixedRoute } from '../entities/mixedRoute'
 import { encodeMixedRouteToPath } from './encodeMixedRouteToPath'
 
-describe.only('#encodeMixedRouteToPath', () => {
+describe('#encodeMixedRouteToPath', () => {
   const ETHER = Ether.onChain(1)
   const token0 = new Token(1, '0x0000000000000000000000000000000000000001', 18, 't0', 'token0')
   const token1 = new Token(1, '0x0000000000000000000000000000000000000002', 18, 't1', 'token1')
@@ -177,7 +177,7 @@ describe.only('#encodeMixedRouteToPath', () => {
     })
   })
 
-  describe.only('mixed route', () => {
+  describe('mixed route', () => {
     it('packs them for exact input v3 -> v2 with wrapped ether output', () => {
       expect(encodeMixedRouteToPath(route_0_V3_1_V2_weth, false)).toEqual(
         '0x0000000000000000000000000000000000000001000bb80000000000000000000000000000000000000002800000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
