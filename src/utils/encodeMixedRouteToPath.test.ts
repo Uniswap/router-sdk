@@ -21,6 +21,7 @@ describe.only('#encodeMixedRouteToPath', () => {
   const pair_1_2 = new Pair(CurrencyAmount.fromRawAmount(token1, '150'), CurrencyAmount.fromRawAmount(token2, '150'))
   const pair_0_weth = new Pair(CurrencyAmount.fromRawAmount(token0, '100'), CurrencyAmount.fromRawAmount(weth, '100'))
   const pair_1_weth = new Pair(CurrencyAmount.fromRawAmount(token1, '175'), CurrencyAmount.fromRawAmount(weth, '100'))
+  const pair_2_weth = new Pair(CurrencyAmount.fromRawAmount(token2, '150'), CurrencyAmount.fromRawAmount(weth, '100'))
 
   const route_0_V3_1 = new MixedRoute([pool_0_1_medium], token0, token1)
   const route_0_V3_1_V3_2 = new MixedRoute([pool_0_1_medium, pool_1_2_low], token0, token2)
@@ -38,6 +39,7 @@ describe.only('#encodeMixedRouteToPath', () => {
 
   const route_0_V3_1_V2_weth = new MixedRoute([pool_0_1_medium, pair_1_weth], token0, ETHER)
   const route_0_V3_weth_V2_1_V2_2 = new MixedRoute([pool_0_weth, pair_1_weth, pair_1_2], token0, token2)
+  const route_0_V3_1_v3_weth_V2_2 = new MixedRoute([pool_0_1_medium, pool_1_weth, pair_2_weth], token0, token2)
 
   describe('pure V3', () => {
     it('packs them for exact input single hop', () => {
@@ -197,6 +199,18 @@ describe.only('#encodeMixedRouteToPath', () => {
     it('packs them for exact output v3 -> v2 -> v2', () => {
       expect(encodeMixedRouteToPath(route_0_V3_weth_V2_1_V2_2, true)).toEqual(
         '0x00000000000000000000000000000000000000038000000000000000000000000000000000000000000002800000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000001'
+      )
+    })
+
+    it('packs them for exact input v3 -> v3 -> v2', () => {
+      expect(encodeMixedRouteToPath(route_0_V3_1_v3_weth_V2_2, false)).toEqual(
+        '0x0000000000000000000000000000000000000001000bb80000000000000000000000000000000000000002000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc28000000000000000000000000000000000000000000003'
+      )
+    })
+
+    it('packs them for exact output v3 -> v3 -> v2', () => {
+      expect(encodeMixedRouteToPath(route_0_V3_1_v3_weth_V2_2, true)).toEqual(
+        '0x0000000000000000000000000000000000000003800000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001'
       )
     })
   })
