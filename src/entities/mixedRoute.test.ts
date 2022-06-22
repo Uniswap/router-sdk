@@ -301,7 +301,6 @@ describe.only('MixedRoute', () => {
         // pair 1_2 midPrice = 1.3334
         // is it 0.2 / 1.3334, equals 0.15
         const route = new MixedRoute([pool_0_1, pair_1_2], token0, token2)
-        console.log(route.midPrice.toFixed(4))
         expect(route.midPrice.toFixed(4)).toEqual('0.1500')
       })
     })
