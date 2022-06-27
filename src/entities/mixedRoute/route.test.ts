@@ -26,7 +26,7 @@ describe.only('MixedRoute', () => {
       /// @dev since the MixedRoute sdk object lives here in router-sdk we don't need to reconstruct it
       const routeOriginal = new MixedRouteSDK([pool_0_1], token0, token1)
       const route = new MixedRoute(routeOriginal)
-      expect(route.parts).toEqual([pool_0_1])
+      expect(route.pools).toEqual([pool_0_1])
       expect(route.tokenPath).toEqual([token0, token1])
       expect(route.input).toEqual(token0)
       expect(route.output).toEqual(token1)
@@ -35,7 +35,7 @@ describe.only('MixedRoute', () => {
 
     it('wraps pure v2 route object and successfully constructs a path from the tokens', () => {
       const route = new MixedRouteSDK([pair_0_1], token0, token1)
-      expect(route.parts).toEqual([pair_0_1])
+      expect(route.pools).toEqual([pair_0_1])
       expect(route.tokenPath).toEqual([token0, token1])
       expect(route.input).toEqual(token0)
       expect(route.output).toEqual(token1)
@@ -44,7 +44,7 @@ describe.only('MixedRoute', () => {
 
     it('wraps mixed route object and successfully constructs a path from the tokens', () => {
       const route = new MixedRouteSDK([pool_0_1, pair_1_weth], token0, weth)
-      expect(route.parts).toEqual([pool_0_1, pair_1_weth])
+      expect(route.pools).toEqual([pool_0_1, pair_1_weth])
       expect(route.tokenPath).toEqual([token0, token1, weth])
       expect(route.input).toEqual(token0)
       expect(route.output).toEqual(weth)
@@ -53,7 +53,7 @@ describe.only('MixedRoute', () => {
 
     it('wraps complex mixed route object and successfully constructs a path from the tokens', () => {
       const route = new MixedRouteSDK([pool_0_1, pair_1_weth, pair_weth_2], token0, token2)
-      expect(route.parts).toEqual([pool_0_1, pair_1_weth, pair_weth_2])
+      expect(route.pools).toEqual([pool_0_1, pair_1_weth, pair_weth_2])
       expect(route.tokenPath).toEqual([token0, token1, weth, token2])
       expect(route.input).toEqual(token0)
       expect(route.output).toEqual(token2)
@@ -63,7 +63,7 @@ describe.only('MixedRoute', () => {
 
   it('can have a token as both input and output', () => {
     const route = new MixedRouteSDK([pair_0_weth, pair_0_1, pair_1_weth], weth, weth)
-    expect(route.parts).toEqual([pair_0_weth, pair_0_1, pair_1_weth])
+    expect(route.pools).toEqual([pair_0_weth, pair_0_1, pair_1_weth])
     expect(route.input).toEqual(weth)
     expect(route.output).toEqual(weth)
   })

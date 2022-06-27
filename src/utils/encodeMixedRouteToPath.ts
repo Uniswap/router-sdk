@@ -15,7 +15,7 @@ const V2_FEE = 8388608
 export function encodeMixedRouteToPath(route: MixedRouteSDK<Currency, Currency>, exactOutput: boolean): string {
   const firstInputToken: Token = route.input.wrapped
 
-  const { path, types } = route.parts.reduce(
+  const { path, types } = route.pools.reduce(
     (
       { inputToken, path, types }: { inputToken: Token; path: (string | number)[]; types: string[] },
       part: Pool | Pair,
