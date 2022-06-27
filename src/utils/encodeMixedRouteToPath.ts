@@ -2,7 +2,7 @@ import { pack } from '@ethersproject/solidity'
 import { Currency, Token } from '@uniswap/sdk-core'
 import { Pool } from '@uniswap/v3-sdk'
 import { Pair } from '@uniswap/v2-sdk'
-import { MixedRouteSDK } from '../entities/mixedRoute'
+import { MixedRouteSDK } from '../entities/mixedRoute/route'
 
 /// @dev We should import this from somewhere
 const V2_FEE = 8388608

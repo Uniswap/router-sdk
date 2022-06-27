@@ -1,21 +1,15 @@
+// entities/route.ts
+
 import { Route as V2RouteSDK, Pair } from '@uniswap/v2-sdk'
 import { Route as V3RouteSDK, Pool } from '@uniswap/v3-sdk'
 import { Protocol } from './protocol'
 import { Currency, Price, Token } from '@uniswap/sdk-core'
-import { MixedRouteSDK } from './mixedRoute'
+import { MixedRouteSDK } from './mixedRoute/route'
 
 export interface IRoute<TInput extends Currency, TOutput extends Currency, TPool extends Pool | Pair> {
   protocol: Protocol
   // array of pools if v3 or pairs if v2
   pools: TPool[]
-  path: Token[]
-  midPrice: Price<TInput, TOutput>
-  input: TInput
-  output: TOutput
-}
-
-export interface IMixedRoute<TInput extends Currency, TOutput extends Currency, TPool extends Pool | Pair> {
-  parts: TPool[]
   path: Token[]
   midPrice: Price<TInput, TOutput>
   input: TInput
@@ -53,14 +47,15 @@ export class RouteV3<TInput extends Currency, TOutput extends Currency>
 // Mixed route wrapper
 export class MixedRoute<TInput extends Currency, TOutput extends Currency>
   extends MixedRouteSDK<TInput, TOutput>
-  implements IMixedRoute<TInput, TOutput, Pool | Pair>
+  implements IRoute<TInput, TOutput, Pool | Pair>
 {
-  public readonly parts: (Pool | Pair)[]
+  public readonly protocol: Protocol = Protocol.MIXED
+  public readonly pools: (Pool | Pair)[]
   public readonly path: Token[]
 
   constructor(mixedRoute: MixedRouteSDK<TInput, TOutput>) {
-    super(mixedRoute.parts, mixedRoute.input, mixedRoute.output)
-    this.parts = mixedRoute.parts
+    super(mixedRoute.pools, mixedRoute.input, mixedRoute.output)
+    this.pools = mixedRoute.pools
     this.path = mixedRoute.tokenPath
   }
 }

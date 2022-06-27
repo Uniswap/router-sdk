@@ -1,9 +1,9 @@
 import { Ether, Token, WETH9, CurrencyAmount } from '@uniswap/sdk-core'
 import { Route as V3RouteSDK, Pool, FeeAmount, TickMath, encodeSqrtRatioX96 } from '@uniswap/v3-sdk'
-import { MixedRoute, RouteV3 } from './route'
-import { Protocol } from './protocol'
+import { MixedRoute, RouteV3 } from '../route'
+import { Protocol } from '../protocol'
 import { Route as V2RouteSDK, Pair } from '@uniswap/v2-sdk'
-import { MixedRouteSDK } from './mixedRoute'
+import { MixedRouteSDK } from './route'
 
 describe.only('MixedRoute', () => {
   const ETHER = Ether.onChain(1)

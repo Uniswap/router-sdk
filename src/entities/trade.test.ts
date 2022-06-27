@@ -1,3 +1,5 @@
+// entities/trade.test.ts
+
 import { sqrt, Token, CurrencyAmount, TradeType, WETH9, Ether, Percent, Price } from '@uniswap/sdk-core'
 import JSBI from 'jsbi'
 import { RouteV2, RouteV3 } from './route'

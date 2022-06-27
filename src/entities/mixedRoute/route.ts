@@ -1,3 +1,5 @@
+// entities/mixedRoute/route
+
 import invariant from 'tiny-invariant'
 
 import { Currency, Price, Token } from '@uniswap/sdk-core'
@@ -12,7 +14,7 @@ type TPool = Pair | Pool
  * @template TOutput The output token
  */
 export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
-  public readonly parts: TPool[]
+  public readonly pools: TPool[]
   public readonly tokenPath: Token[]
   public readonly input: TInput
   public readonly output: TOutput
@@ -25,37 +27,37 @@ export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
    * @param input The input token
    * @param output The output token
    */
-  public constructor(parts: TPool[], input: TInput, output: TOutput) {
-    invariant(parts.length > 0, 'PARTS')
+  public constructor(pools: TPool[], input: TInput, output: TOutput) {
+    invariant(pools.length > 0, 'PARTS')
 
-    const chainId = parts[0].chainId
-    const allOnSameChain = parts.every((part) => part.chainId === chainId)
+    const chainId = pools[0].chainId
+    const allOnSameChain = pools.every((part) => part.chainId === chainId)
     invariant(allOnSameChain, 'CHAIN_IDS')
 
     const wrappedInput = input.wrapped
-    invariant(parts[0].involvesToken(wrappedInput), 'INPUT')
+    invariant(pools[0].involvesToken(wrappedInput), 'INPUT')
 
-    invariant(parts[parts.length - 1].involvesToken(output.wrapped), 'OUTPUT')
+    invariant(pools[pools.length - 1].involvesToken(output.wrapped), 'OUTPUT')
 
     /**
      * Normalizes token0-token1 order and selects the next token/fee step to add to the path
      * */
     const tokenPath: Token[] = [wrappedInput]
-    for (const [i, part] of parts.entries()) {
+    for (const [i, part] of pools.entries()) {
       const currentInputToken = tokenPath[i]
       invariant(currentInputToken.equals(part.token0) || currentInputToken.equals(part.token1), 'PATH')
       const nextToken = currentInputToken.equals(part.token0) ? part.token1 : part.token0
       tokenPath.push(nextToken)
     }
 
-    this.parts = parts
+    this.pools = pools
     this.tokenPath = tokenPath
     this.input = input
     this.output = output ?? tokenPath[tokenPath.length - 1]
   }
 
   public get chainId(): number {
-    return this.parts[0].chainId
+    return this.pools[0].chainId
   }
 
   /**
@@ -76,7 +78,7 @@ export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
       }
     }
 
-    const price = this.parts.slice(1).reduce(
+    const price = this.pools.slice(1).reduce(
       ({ nextInput, price }, pool) => {
         return nextInput.equals(pool.token0)
           ? {
@@ -88,14 +90,14 @@ export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
               price: price.multiply(getPriceForPart(pool, false)),
             }
       },
-      this.parts[0].token0.equals(this.input.wrapped)
+      this.pools[0].token0.equals(this.input.wrapped)
         ? {
-            nextInput: this.parts[0].token1,
-            price: getPriceForPart(this.parts[0], true),
+            nextInput: this.pools[0].token1,
+            price: getPriceForPart(this.pools[0], true),
           }
         : {
-            nextInput: this.parts[0].token0,
-            price: getPriceForPart(this.parts[0], false),
+            nextInput: this.pools[0].token0,
+            price: getPriceForPart(this.pools[0], false),
           }
     ).price
 
