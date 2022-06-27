@@ -106,7 +106,7 @@ export abstract class SwapRouter {
   }
 
   private static encodeV3Swap(
-    trade: V3Trade<Currency, Currency, TradeType> | MixedRouteTrade<Currency, Currency, TradeType>,
+    trade: V3Trade<Currency, Currency, TradeType>,
     options: SwapOptions,
     routerMustCustody: boolean,
     performAggregatedSlippageCheck: boolean
@@ -128,8 +128,6 @@ export abstract class SwapRouter {
 
       if (singleHop) {
         if (trade.tradeType === TradeType.EXACT_INPUT) {
-          invariant(!(route instanceof MixedRouteSDK), 'MixedRouteSDK does not support single hop exactInput swaps')
-
           const exactInputSingleParams = {
             tokenIn: route.tokenPath[0].address,
             tokenOut: route.tokenPath[1].address,
@@ -142,8 +140,6 @@ export abstract class SwapRouter {
 
           calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactInputSingle', [exactInputSingleParams]))
         } else {
-          invariant(!(route instanceof MixedRouteSDK), 'MixedRouteSDK does not support single hop exactOutput swaps')
-
           const exactOutputSingleParams = {
             tokenIn: route.tokenPath[0].address,
             tokenOut: route.tokenPath[1].address,
@@ -157,10 +153,7 @@ export abstract class SwapRouter {
           calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactOutputSingle', [exactOutputSingleParams]))
         }
       } else {
-        const path: string =
-          route instanceof MixedRouteSDK
-            ? encodeMixedRouteToPath(route, trade.tradeType === TradeType.EXACT_OUTPUT)
-            : encodeRouteToPath(route, trade.tradeType === TradeType.EXACT_OUTPUT)
+        const path: string = encodeRouteToPath(route, trade.tradeType === TradeType.EXACT_OUTPUT)
 
         if (trade.tradeType === TradeType.EXACT_INPUT) {
           const exactInputParams = {
@@ -179,9 +172,51 @@ export abstract class SwapRouter {
             amountInMaximum: amountIn,
           }
 
-          invariant(!(route instanceof MixedRouteSDK), 'MixedRouteSDK does not support exactOutput')
-
           calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactOutput', [exactOutputParams]))
+        }
+      }
+    }
+
+    return calldatas
+  }
+
+  private static encodeMixedRouteSwap(
+    trade: MixedRouteTrade<Currency, Currency, TradeType>,
+    options: SwapOptions,
+    routerMustCustody: boolean,
+    performAggregatedSlippageCheck: boolean
+  ): string[] {
+    const calldatas: string[] = []
+
+    for (const { route, inputAmount, outputAmount } of trade.swaps) {
+      const amountIn: string = toHex(trade.maximumAmountIn(options.slippageTolerance, inputAmount).quotient)
+      const amountOut: string = toHex(trade.minimumAmountOut(options.slippageTolerance, outputAmount).quotient)
+
+      // flag for whether the trade is single hop or not
+      const singleHop = route.pools.length === 1
+
+      const recipient = routerMustCustody
+        ? ADDRESS_THIS
+        : typeof options.recipient === 'undefined'
+        ? MSG_SENDER
+        : validateAndParseAddress(options.recipient)
+
+      if (singleHop) {
+        invariant(!(route instanceof MixedRouteSDK), 'MixedRouteSDK does not support single hop swaps')
+      } else {
+        const path: string = encodeMixedRouteToPath(route, trade.tradeType === TradeType.EXACT_OUTPUT)
+
+        if (trade.tradeType === TradeType.EXACT_INPUT) {
+          const exactInputParams = {
+            path,
+            recipient,
+            amountIn,
+            amountOutMinimum: performAggregatedSlippageCheck ? 0 : amountOut,
+          }
+
+          calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactInput', [exactInputParams]))
+        } else {
+          invariant(!(route instanceof MixedRouteSDK), 'MixedRouteSDK does not support exactOutput')
         }
       }
     }
@@ -260,6 +295,8 @@ export abstract class SwapRouter {
               tradeType: trades.tradeType,
             })
           )
+        } else {
+          throw new Error('UNSUPPORTED_PROTOCOL')
         }
       }
       trades = v2Andv3Trades
@@ -270,7 +307,10 @@ export abstract class SwapRouter {
     }
 
     const numberOfTrades = trades.reduce(
-      (numberOfTrades, trade) => numberOfTrades + (trade instanceof V3Trade ? trade.swaps.length : 1),
+      /// TODO: configure this for MixedRoute
+      (numberOfTrades, trade) =>
+        /// temp we assume that MixedRoute and V3Trade share same property
+        numberOfTrades + (trade instanceof V3Trade || trade instanceof MixedRouteTrade ? trade.swaps.length : 1),
       0
     )
 
@@ -326,6 +366,14 @@ export abstract class SwapRouter {
           calldatas.push(calldata)
         }
       } else if (trade instanceof MixedRouteTrade) {
+        for (const calldata of SwapRouter.encodeMixedRouteSwap(
+          trade,
+          options,
+          routerMustCustody,
+          performAggregatedSlippageCheck
+        )) {
+          calldatas.push(calldata)
+        }
       } else {
         throw new Error('Unsupported trade object')
       }
@@ -371,7 +419,12 @@ export abstract class SwapRouter {
       | Trade<Currency, Currency, TradeType>
       | V2Trade<Currency, Currency, TradeType>
       | V3Trade<Currency, Currency, TradeType>
-      | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[],
+      | MixedRouteTrade<Currency, Currency, TradeType>
+      | (
+          | V2Trade<Currency, Currency, TradeType>
+          | V3Trade<Currency, Currency, TradeType>
+          | MixedRouteTrade<Currency, Currency, TradeType>
+        )[],
     options: SwapOptions
   ): MethodParameters {
     const {
@@ -421,7 +474,12 @@ export abstract class SwapRouter {
       | Trade<Currency, Currency, TradeType>
       | V2Trade<Currency, Currency, TradeType>
       | V3Trade<Currency, Currency, TradeType>
-      | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[],
+      | MixedRouteTrade<Currency, Currency, TradeType>
+      | (
+          | V2Trade<Currency, Currency, TradeType>
+          | V3Trade<Currency, Currency, TradeType>
+          | MixedRouteTrade<Currency, Currency, TradeType>
+        )[],
     options: SwapAndAddOptions,
     position: Position,
     addLiquidityOptions: CondensedAddLiquidityOptions,
