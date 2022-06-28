@@ -1,5 +1,3 @@
-// entities/trade
-
 import { Currency, CurrencyAmount, Fraction, Percent, Price, TradeType } from '@uniswap/sdk-core'
 import { Pair, Route as V2RouteSDK, Trade as V2TradeSDK } from '@uniswap/v2-sdk'
 import { Pool, Route as V3RouteSDK, Trade as V3TradeSDK } from '@uniswap/v3-sdk'
@@ -7,7 +5,6 @@ import invariant from 'tiny-invariant'
 import { ONE, ZERO } from '../constants'
 import { MixedRouteSDK } from './mixedRoute/route'
 import { MixedRouteTrade as MixedRouteTradeSDK } from './mixedRoute/trade'
-import { Protocol } from './protocol'
 import { IRoute, MixedRoute, RouteV2, RouteV3 } from './route'
 
 export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType extends TradeType> {
@@ -103,11 +100,13 @@ export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType
     const poolAddressSet = new Set<string>()
     for (const { route } of this.swaps) {
       for (const pool of route.pools) {
-        if (route.protocol == Protocol.V3) {
+        if (pool instanceof Pool) {
           poolAddressSet.add(Pool.getAddress(pool.token0, pool.token1, (pool as Pool).fee))
-        } else {
+        } else if (pool instanceof Pair) {
           const pair = pool
           poolAddressSet.add(Pair.getAddress(pair.token0, pair.token1))
+        } else {
+          throw new Error('unexpected pool type')
         }
       }
     }

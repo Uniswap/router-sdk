@@ -1,5 +1,3 @@
-// src/swapRouter
-
 import { Interface } from '@ethersproject/abi'
 import { Currency, CurrencyAmount, Percent, TradeType, validateAndParseAddress, WETH9 } from '@uniswap/sdk-core'
 import { abi } from '@uniswap/swap-router-contracts/artifacts/contracts/interfaces/ISwapRouter02.sol/ISwapRouter02.json'
@@ -363,6 +361,7 @@ export abstract class SwapRouter {
           routerMustCustody,
           performAggregatedSlippageCheck
         )) {
+          console.log('router-sdk:swapRouter.ts encodeV3Swap calldata', calldata)
           calldatas.push(calldata)
         }
       } else if (trade instanceof MixedRouteTrade) {
