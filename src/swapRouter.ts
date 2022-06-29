@@ -198,11 +198,14 @@ export abstract class SwapRouter {
       // flag for whether the trade is single hop or not
       const singleHop = route.pools.length === 1
 
-      const recipient = routerMustCustody
-        ? ADDRESS_THIS
-        : typeof options.recipient === 'undefined'
-        ? MSG_SENDER
-        : validateAndParseAddress(options.recipient)
+      routerMustCustody = true // testing
+      performAggregatedSlippageCheck = true
+
+      // const recipient = routerMustCustody
+      //   ? ADDRESS_THIS
+      //   : typeof options.recipient === 'undefined'
+      //   ? MSG_SENDER
+      //   : validateAndParseAddress(options.recipient)
 
       console.log('performAggregatedSlippageCheck: ', performAggregatedSlippageCheck)
       console.log('routerMustCustody: ', routerMustCustody)
@@ -212,6 +215,9 @@ export abstract class SwapRouter {
       } else {
         // loop through pools in MixedRoute
         let i = 0
+        const isLastPoolInRoute = (i: number) => {
+          return i === route.pools.length - 1
+        }
         for (const pool of route.pools) {
           // build new route from this pool depending on type
           const newRouteOriginal = new MixedRouteSDK([pool], pool.token0, pool.token1)
@@ -221,9 +227,9 @@ export abstract class SwapRouter {
           if (pool instanceof Pool) {
             const exactInputParams = {
               path,
-              recipient,
+              recipient: isLastPoolInRoute(i) ? MSG_SENDER : ADDRESS_THIS,
               amountIn: i == 0 ? amountIn : 0,
-              amountOutMinimum: performAggregatedSlippageCheck && i !== route.pools.length - 1 ? 0 : amountOut,
+              amountOutMinimum: performAggregatedSlippageCheck || !isLastPoolInRoute(i) ? 0 : amountOut,
             }
             console.log('v3 exactInputParams: ', exactInputParams)
 
@@ -232,9 +238,9 @@ export abstract class SwapRouter {
             // Pair
             const exactInputParams = [
               i == 0 ? amountIn : 0,
-              performAggregatedSlippageCheck && i !== route.pools.length - 1 ? 0 : amountOut,
+              performAggregatedSlippageCheck || !isLastPoolInRoute(i) ? 0 : amountOut,
               newRoute.path.map((token) => token.address), // this should be sorted via sdk
-              recipient,
+              isLastPoolInRoute(i) ? MSG_SENDER : ADDRESS_THIS,
             ]
 
             console.log('v2 exactInputParams', exactInputParams)
