@@ -291,19 +291,7 @@ export abstract class SwapRouter {
         | MixedRouteTrade<Currency, Currency, TradeType>
       )[] = []
 
-      // const mixedRouteIsV3Route =
-
       for (const { route, inputAmount, outputAmount } of trades.swaps) {
-        // route is a MixedRoute which can be mix of Pair or Pool
-        console.log(route)
-        console.log(
-          route.pools.map((pool) => {
-            return {
-              isPool: pool instanceof Pool,
-              isPair: pool instanceof Pair,
-            }
-          })
-        )
         if (route.protocol == Protocol.V2) {
           v2Andv3Trades.push(
             new V2Trade(
@@ -322,16 +310,8 @@ export abstract class SwapRouter {
             })
           )
         } else if (route.protocol == Protocol.MIXED) {
-          console.log('mixedRouteTrade object: ')
-          console.log(
-            MixedRouteTrade.createUncheckedTrade({
-              route: route as MixedRoute<Currency, Currency>,
-              inputAmount,
-              outputAmount,
-              tradeType: trades.tradeType,
-            })
-          )
           v2Andv3Trades.push(
+            /// we can change the naming of this function on MixedRouteTrade if needed
             MixedRouteTrade.createUncheckedTrade({
               route: route as MixedRoute<Currency, Currency>,
               inputAmount,
@@ -409,7 +389,6 @@ export abstract class SwapRouter {
         }
       } else if (trade instanceof MixedRouteTrade) {
         for (const calldata of SwapRouter.encodeMixedRouteSwap(trade, options)) {
-          console.log('router-sdk:swapRouter.ts encodeMixedRouteSwap calldata', calldata)
           calldatas.push(calldata)
         }
       } else {
