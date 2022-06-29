@@ -1,7 +1,7 @@
 import { Interface } from '@ethersproject/abi'
 import { Currency, CurrencyAmount, Percent, TradeType, validateAndParseAddress, WETH9 } from '@uniswap/sdk-core'
 import { abi } from '@uniswap/swap-router-contracts/artifacts/contracts/interfaces/ISwapRouter02.sol/ISwapRouter02.json'
-import { Trade as V2Trade } from '@uniswap/v2-sdk'
+import { Pair, Trade as V2Trade } from '@uniswap/v2-sdk'
 import {
   encodeRouteToPath,
   FeeOptions,
@@ -210,6 +210,42 @@ export abstract class SwapRouter {
         const isLastPoolInRoute = (i: number) => {
           return i === route.pools.length - 1
         }
+
+        /**
+         * Easy optimization here would be to "read ahead" and partition the pools into sections of v2 and v3 pools
+         * then create a new route for each consecutive section of v2 pools and v3 pools.
+         */
+
+        let acc = []
+        let j = 0
+        while (j < route.pools.length) {
+          // seek forward until finding a pool of different type
+          let section = []
+          if (route.pools[j] instanceof Pool) {
+            while (route.pools[j] instanceof Pool) {
+              section.push(route.pools[j])
+              j++
+              if (j === route.pools.length) {
+                // we've reached the end of the route
+                break
+              }
+            }
+            acc.push(section)
+          } else {
+            while (route.pools[j] instanceof Pair) {
+              section.push(route.pools[j])
+              j++
+              if (j === route.pools.length) {
+                // we've reached the end of the route
+                break
+              }
+            }
+            acc.push(section)
+          }
+        }
+
+        console.log(acc)
+
         for (const pool of route.pools) {
           // build new route from this pool depending on type
           const newRouteOriginal = new MixedRouteSDK([pool], pool.token0, pool.token1)
@@ -331,8 +367,9 @@ export abstract class SwapRouter {
     }
 
     const numberOfTrades = trades.reduce(
-      // for mixedRoute, we preform custom logic
-      (numberOfTrades, trade) => numberOfTrades + (trade instanceof V3Trade ? trade.swaps.length : 1),
+      // TODO: is this math right for mixedRouteTrade?
+      (numberOfTrades, trade) =>
+        numberOfTrades + (trade instanceof V3Trade || trade instanceof MixedRouteTrade ? trade.swaps.length : 1),
       0
     )
 
