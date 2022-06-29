@@ -181,9 +181,10 @@ export abstract class SwapRouter {
 
   private static encodeMixedRouteSwap(
     trade: MixedRouteTrade<Currency, Currency, TradeType>,
-    options: SwapOptions,
-    routerMustCustody: boolean,
-    performAggregatedSlippageCheck: boolean
+    options: SwapOptions
+    /// @dev we might not need these two flags since that behavior is assumed to happen for mixed route
+    // routerMustCustody: boolean,
+    // performAggregatedSlippageCheck: boolean
   ): string[] {
     const calldatas: string[] = []
 
@@ -198,17 +199,8 @@ export abstract class SwapRouter {
       // flag for whether the trade is single hop or not
       const singleHop = route.pools.length === 1
 
-      routerMustCustody = true // testing
-      performAggregatedSlippageCheck = true
-
-      // const recipient = routerMustCustody
-      //   ? ADDRESS_THIS
-      //   : typeof options.recipient === 'undefined'
-      //   ? MSG_SENDER
-      //   : validateAndParseAddress(options.recipient)
-
-      console.log('performAggregatedSlippageCheck: ', performAggregatedSlippageCheck)
-      console.log('routerMustCustody: ', routerMustCustody)
+      const recipient =
+        typeof options.recipient === 'undefined' ? MSG_SENDER : validateAndParseAddress(options.recipient)
 
       if (singleHop) {
         invariant(!(route instanceof MixedRouteSDK), 'MixedRouteSDK does not support single hop swaps')
@@ -227,9 +219,9 @@ export abstract class SwapRouter {
           if (pool instanceof Pool) {
             const exactInputParams = {
               path,
-              recipient: isLastPoolInRoute(i) ? MSG_SENDER : ADDRESS_THIS,
+              recipient: isLastPoolInRoute(i) ? recipient : ADDRESS_THIS,
               amountIn: i == 0 ? amountIn : 0,
-              amountOutMinimum: performAggregatedSlippageCheck || !isLastPoolInRoute(i) ? 0 : amountOut,
+              amountOutMinimum: isLastPoolInRoute(i) ? 0 : amountOut,
             }
             console.log('v3 exactInputParams: ', exactInputParams)
 
@@ -238,9 +230,9 @@ export abstract class SwapRouter {
             // Pair
             const exactInputParams = [
               i == 0 ? amountIn : 0,
-              performAggregatedSlippageCheck || !isLastPoolInRoute(i) ? 0 : amountOut,
+              !isLastPoolInRoute(i) ? 0 : amountOut,
               newRoute.path.map((token) => token.address), // this should be sorted via sdk
-              isLastPoolInRoute(i) ? MSG_SENDER : ADDRESS_THIS,
+              isLastPoolInRoute(i) ? recipient : ADDRESS_THIS,
             ]
 
             console.log('v2 exactInputParams', exactInputParams)
@@ -359,10 +351,8 @@ export abstract class SwapRouter {
     }
 
     const numberOfTrades = trades.reduce(
-      /// TODO: configure this for MixedRoute
-      (numberOfTrades, trade) =>
-        /// temp we assume that MixedRoute and V3Trade share same property
-        numberOfTrades + (trade instanceof V3Trade || trade instanceof MixedRouteTrade ? trade.swaps.length : 1),
+      // for mixedRoute, we preform custom logic
+      (numberOfTrades, trade) => numberOfTrades + (trade instanceof V3Trade ? trade.swaps.length : 1),
       0
     )
 
@@ -418,12 +408,7 @@ export abstract class SwapRouter {
           calldatas.push(calldata)
         }
       } else if (trade instanceof MixedRouteTrade) {
-        for (const calldata of SwapRouter.encodeMixedRouteSwap(
-          trade,
-          options,
-          routerMustCustody,
-          performAggregatedSlippageCheck
-        )) {
+        for (const calldata of SwapRouter.encodeMixedRouteSwap(trade, options)) {
           console.log('router-sdk:swapRouter.ts encodeMixedRouteSwap calldata', calldata)
           calldatas.push(calldata)
         }
