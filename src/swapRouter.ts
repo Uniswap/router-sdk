@@ -208,8 +208,6 @@ export abstract class SwapRouter {
       if (singleHop) {
         invariant(!(route instanceof MixedRouteSDK), 'MixedRouteSDK does not support single hop swaps')
       } else {
-        // loop through pools in MixedRoute
-        let i = 0
         /**
          * Easy optimization here would be to "read ahead" and partition the pools into sections of v2 and v3 pools
          * then create a new route for each consecutive section of v2 pools and v3 pools.
@@ -245,14 +243,18 @@ export abstract class SwapRouter {
 
         console.log(acc)
 
-        const isLastSectionInRoute = (i: number) => {
-          return i === acc.length - 1
-        }
-
-        for (const section of acc) {
+        for (let i = 0; i < acc.length; i++) {
+          const isLastSectionInRoute = (i: number) => {
+            return i === acc.length - 1
+          }
+          const section = acc[i]
           // build new route from this pool depending on type
+          console.log(section)
+          console.log('inputToken: ', section[0].token0, 'outputToken: ', section[section.length - 1].token1)
           const newRouteOriginal = new MixedRouteSDK(
             [...section],
+            // TODO: this is wrong, need to do something like in encodeMixedRouteToPath where we do
+            ///       const outputToken: Token = part.token0.equals(inputToken) ? part.token1 : part.token0
             section[0].token0,
             section[section.length - 1].token1
           )
@@ -282,7 +284,6 @@ export abstract class SwapRouter {
 
             calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactTokensForTokens', exactInputParams))
           }
-          i++
         }
 
         // for (const pool of route.pools) {

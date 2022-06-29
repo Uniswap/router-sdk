@@ -295,31 +295,26 @@ describe('SwapRouter', () => {
             expect(value).toBe('0x00')
           })
 
-          // it('meta-trade', async () => {
-          //   const trades = await Trade.fromRoutes(
-          //     [
-          //       {
-          //         routev2: v2Trade.route,
-          //         amount: amountIn,
-          //       },
-          //     ],
-          //     [
-          //       {
-          //         routev3: (await v3Trade).swaps[0].route,
-          //         amount: amountIn,
-          //       },
-          //     ],
-          //     TradeType.EXACT_INPUT
-          //   )
+          xit('meta-trade', async () => {
+            const trades = await Trade.fromRoutes([], [], TradeType.EXACT_INPUT, [
+              {
+                mixedRoute: (await mixedRouteTrade1).swaps[0].route,
+                amount: amountIn,
+              },
+              {
+                mixedRoute: (await mixedRouteTrade2).swaps[0].route,
+                amount: amountIn,
+              },
+            ])
 
-          //   const { calldata, value } = SwapRouter.swapCallParameters(trades, {
-          //     slippageTolerance,
-          //     recipient,
-          //     deadlineOrPreviousBlockhash: deadline,
-          //   })
-          //   expect(calldata).toEqual(expectedCalldata)
-          //   expect(value).toBe('0x00')
-          // })
+            const { calldata, value } = SwapRouter.swapCallParameters(trades, {
+              slippageTolerance,
+              recipient,
+              deadlineOrPreviousBlockhash: deadline,
+            })
+            expect(calldata).toEqual(expectedCalldata)
+            expect(value).toBe('0x00')
+          })
         })
       })
     })
