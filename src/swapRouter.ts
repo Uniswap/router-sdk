@@ -1,7 +1,7 @@
 import { Interface } from '@ethersproject/abi'
 import { Currency, CurrencyAmount, Percent, TradeType, validateAndParseAddress, WETH9 } from '@uniswap/sdk-core'
 import { abi } from '@uniswap/swap-router-contracts/artifacts/contracts/interfaces/ISwapRouter02.sol/ISwapRouter02.json'
-import { Pair, Trade as V2Trade } from '@uniswap/v2-sdk'
+import { Trade as V2Trade } from '@uniswap/v2-sdk'
 import {
   encodeRouteToPath,
   FeeOptions,
@@ -221,7 +221,7 @@ export abstract class SwapRouter {
               path,
               recipient: isLastPoolInRoute(i) ? recipient : ADDRESS_THIS,
               amountIn: i == 0 ? amountIn : 0,
-              amountOutMinimum: isLastPoolInRoute(i) ? 0 : amountOut,
+              amountOutMinimum: !isLastPoolInRoute(i) ? 0 : amountOut,
             }
             console.log('v3 exactInputParams: ', exactInputParams)
 
