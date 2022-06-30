@@ -267,6 +267,54 @@ describe('SwapRouter', () => {
     })
 
     describe('Mixed Route', () => {
+      describe('single-hop exact input (v2 + v3) backwards compatible', () => {
+        describe('different trade configurations result in identical calldata', () => {
+          const expectedCalldata =
+            '0x5ae401dc000000000000000000000000000000000000000000000000000000000000007b000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000016000000000000000000000000000000000000000000000000000000000000000e4472b43f300000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000062000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e404e45aaf000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000bb8000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000061000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+          const amountIn = CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(100))
+
+          const v2Trade = V2Trade.exactIn(new V2Route([pair_0_1], token0, token1), amountIn)
+          const v3Trade = V3Trade.fromRoute(new V3Route([pool_0_1], token0, token1), amountIn, TradeType.EXACT_INPUT)
+
+          it('array of trades', async () => {
+            const trades = [v2Trade, await v3Trade]
+            const { calldata, value } = SwapRouter.swapCallParameters(trades, {
+              slippageTolerance,
+              recipient,
+              deadlineOrPreviousBlockhash: deadline,
+            })
+            expect(calldata).toEqual(expectedCalldata)
+            expect(value).toBe('0x00')
+          })
+
+          it('meta-trade', async () => {
+            const trades = await Trade.fromRoutes(
+              [
+                {
+                  routev2: v2Trade.route,
+                  amount: amountIn,
+                },
+              ],
+              [
+                {
+                  routev3: (await v3Trade).swaps[0].route,
+                  amount: amountIn,
+                },
+              ],
+              TradeType.EXACT_INPUT
+            )
+
+            const { calldata, value } = SwapRouter.swapCallParameters(trades, {
+              slippageTolerance,
+              recipient,
+              deadlineOrPreviousBlockhash: deadline,
+            })
+            expect(calldata).toEqual(expectedCalldata)
+            expect(value).toBe('0x00')
+          })
+        })
+      })
+
       describe('multi-hop exact input (mixed route) backwards compatible', () => {
         describe('different trade configurations result in identical calldata', () => {
           const expectedCalldata =

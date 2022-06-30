@@ -179,22 +179,29 @@ export abstract class SwapRouter {
     return calldatas
   }
 
+  /**
+   * @notice Generates the calldata for a MixedRouteSwap. Since MixedRoutes cannot be singleHops, we will instead generate
+   *         them via the existing encodeV3Swap and encodeV2Swap methods.
+   * @param trade The MixedRouteTrade to encode.
+   * @param options
+   * @param routerMustCustody
+   * @param performAggregatedSlippageCheck
+   * @returns
+   */
   private static encodeMixedRouteSwap(
     trade: MixedRouteTrade<Currency, Currency, TradeType>,
-    options: SwapOptions
+    options: SwapOptions,
     /// @dev we might not need these two flags since that behavior is assumed to happen for mixed route
-    // routerMustCustody: boolean,
-    // performAggregatedSlippageCheck: boolean
+    /// they are not used in mixedRouteTrade calldata generation but passed to encodeV3Swap and encodeV2Swap in case of singleHop
+    routerMustCustody: boolean,
+    performAggregatedSlippageCheck: boolean
   ): string[] {
     const calldatas: string[] = []
 
     invariant(trade.tradeType === TradeType.EXACT_INPUT, 'MixedRouteTrades must be exact input')
 
-    console.log(trade.inputAmount)
-
     for (const { route, inputAmount, outputAmount } of trade.swaps) {
       const amountIn: string = toHex(trade.maximumAmountIn(options.slippageTolerance, inputAmount).quotient)
-      console.log('maximumAmountIn', amountIn)
       const amountOut: string = toHex(trade.minimumAmountOut(options.slippageTolerance, outputAmount).quotient)
 
       // flag for whether the trade is single hop or not
@@ -207,7 +214,26 @@ export abstract class SwapRouter {
       }
 
       if (singleHop) {
-        invariant(!(route instanceof MixedRouteSDK), 'MixedRouteSDK does not support single hop swaps')
+        // For single hop, since it isn't really a mixedRoute, we'll just mimic behavior of V3 or V2
+        if (route.pools.every((pool) => pool instanceof Pool)) {
+          /// it's guaranteed that the MixedRouteTrade here is compatible with V3Trade
+          return this.encodeV3Swap(
+            trade as unknown as V3Trade<Currency, Currency, TradeType>,
+            options,
+            routerMustCustody,
+            performAggregatedSlippageCheck
+          )
+        } else {
+          return [
+            ...calldatas,
+            this.encodeV2Swap(
+              trade as unknown as V2Trade<Currency, Currency, TradeType>,
+              options,
+              routerMustCustody,
+              performAggregatedSlippageCheck
+            ),
+          ]
+        }
       } else {
         let acc = []
         let j = 0
@@ -250,21 +276,17 @@ export abstract class SwapRouter {
             },
             { inputToken: firstInputToken }
           )
-          console.log('output for section', section, 'is', inputToken)
           return inputToken
         }
 
-        const isLastSectionInRoute = (i: number) => {
-          return i === acc.length - 1
-        }
-
         for (let i = 0; i < acc.length; i++) {
+          const isLastSectionInRoute = (i: number) => {
+            return i === acc.length - 1
+          }
+
           const section = acc[i]
 
           outputToken = getOutputOfSection(section, outputToken)
-
-          console.log('inputToken', section[0].token0.equals(outputToken) ? section[0].token1 : section[0].token0)
-          console.log('outputToken', outputToken)
 
           const newRouteOriginal = new MixedRouteSDK(
             [...section],
@@ -447,7 +469,12 @@ export abstract class SwapRouter {
           calldatas.push(calldata)
         }
       } else if (trade instanceof MixedRouteTrade) {
-        for (const calldata of SwapRouter.encodeMixedRouteSwap(trade, options)) {
+        for (const calldata of SwapRouter.encodeMixedRouteSwap(
+          trade,
+          options,
+          routerMustCustody,
+          performAggregatedSlippageCheck
+        )) {
           calldatas.push(calldata)
         }
       } else {
@@ -487,7 +514,7 @@ export abstract class SwapRouter {
 
   /**
    * Produces the on-chain method name to call and the hex encoded parameters to pass as arguments for a given trade.
-   * @param trade to produce call parameters for
+   * @param trades to produce call parameters for
    * @param options options for the call parameters
    */
   public static swapCallParameters(
@@ -542,7 +569,7 @@ export abstract class SwapRouter {
 
   /**
    * Produces the on-chain method name to call and the hex encoded parameters to pass as arguments for a given trade.
-   * @param trade to produce call parameters for
+   * @param trades to produce call parameters for
    * @param options options for the call parameters
    */
   public static swapAndAddCallParameters(

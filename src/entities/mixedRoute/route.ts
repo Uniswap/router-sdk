@@ -28,7 +28,7 @@ export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
    * @param output The output token
    */
   public constructor(pools: TPool[], input: TInput, output: TOutput) {
-    invariant(pools.length > 0, 'PARTS')
+    invariant(pools.length > 0, 'POOLS')
 
     const chainId = pools[0].chainId
     const allOnSameChain = pools.every((part) => part.chainId === chainId)
