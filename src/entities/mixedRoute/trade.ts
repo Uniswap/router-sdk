@@ -470,10 +470,13 @@ export class MixedRouteTrade<TInput extends Currency, TOutput extends Currency, 
       const pool = pools[i]
       // pool irrelevant
       if (!pool.token0.equals(amountIn.currency) && !pool.token1.equals(amountIn.currency)) continue
+      if (pool instanceof Pair) {
+        if ((pool as Pair).reserve0.equalTo(ZERO) || (pool as Pair).reserve1.equalTo(ZERO)) continue
+      }
 
       let amountOut: CurrencyAmount<Token>
       try {
-        ;[amountOut] = await (pool as Pool).getOutputAmount(amountIn)
+        ;[amountOut] = await pool.getOutputAmount(amountIn)
       } catch (error) {
         // input too low
         // @ts-ignore[2571] error is unknown
