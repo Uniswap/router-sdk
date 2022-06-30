@@ -1,5 +1,5 @@
 import { Interface } from '@ethersproject/abi'
-import { Currency, CurrencyAmount, Percent, TradeType, validateAndParseAddress, WETH9 } from '@uniswap/sdk-core'
+import { Currency, CurrencyAmount, Percent, Token, TradeType, validateAndParseAddress, WETH9 } from '@uniswap/sdk-core'
 import { abi } from '@uniswap/swap-router-contracts/artifacts/contracts/interfaces/ISwapRouter02.sol/ISwapRouter02.json'
 import { Pair, Trade as V2Trade } from '@uniswap/v2-sdk'
 import {
@@ -208,11 +208,6 @@ export abstract class SwapRouter {
       if (singleHop) {
         invariant(!(route instanceof MixedRouteSDK), 'MixedRouteSDK does not support single hop swaps')
       } else {
-        /**
-         * Easy optimization here would be to "read ahead" and partition the pools into sections of v2 and v3 pools
-         * then create a new route for each consecutive section of v2 pools and v3 pools.
-         */
-
         let acc = []
         let j = 0
         while (j < route.pools.length) {
@@ -241,22 +236,40 @@ export abstract class SwapRouter {
           }
         }
 
-        console.log(acc)
+        const firstInputToken = route.input.wrapped
+        let outputToken = firstInputToken
+
+        const getOutputOfSection = (section: (Pool | Pair)[], firstInputToken: Token) => {
+          const { inputToken } = section.reduce(
+            ({ inputToken }, pool: Pool | Pair): { inputToken: Token } => {
+              const outputToken: Token = pool.token0.equals(inputToken) ? pool.token1 : pool.token0
+              return {
+                inputToken: outputToken,
+              }
+            },
+            { inputToken: firstInputToken }
+          )
+          console.log('output for section', section, 'is', inputToken)
+          return inputToken
+        }
+
+        const isLastSectionInRoute = (i: number) => {
+          return i === acc.length - 1
+        }
 
         for (let i = 0; i < acc.length; i++) {
-          const isLastSectionInRoute = (i: number) => {
-            return i === acc.length - 1
-          }
           const section = acc[i]
-          // build new route from this pool depending on type
-          console.log(section)
-          console.log('inputToken: ', section[0].token0, 'outputToken: ', section[section.length - 1].token1)
+
+          outputToken = getOutputOfSection(section, outputToken)
+
+          console.log('inputToken', section[0].token0.equals(outputToken) ? section[0].token1 : section[0].token0)
+          console.log('outputToken', outputToken)
+
           const newRouteOriginal = new MixedRouteSDK(
             [...section],
-            // TODO: this is wrong, need to do something like in encodeMixedRouteToPath where we do
-            ///       const outputToken: Token = part.token0.equals(inputToken) ? part.token1 : part.token0
-            section[0].token0,
-            section[section.length - 1].token1
+            // complement of prev output
+            section[0].token0.equals(outputToken) ? section[0].token1 : section[0].token0,
+            outputToken
           )
           const newRoute = new MixedRoute(newRouteOriginal)
           const path: string = encodeMixedRouteToPath(newRoute, false)
@@ -285,38 +298,6 @@ export abstract class SwapRouter {
             calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactTokensForTokens', exactInputParams))
           }
         }
-
-        // for (const pool of route.pools) {
-        //   // build new route from this pool depending on type
-        //   const newRouteOriginal = new MixedRouteSDK([pool], pool.token0, pool.token1)
-        //   const newRoute = new MixedRoute(newRouteOriginal)
-        //   const path: string = encodeMixedRouteToPath(newRoute, true)
-
-        //   if (pool instanceof Pool) {
-        //     const exactInputParams = {
-        //       path,
-        //       recipient: isLastPoolInRoute(i) ? recipient : ADDRESS_THIS,
-        //       amountIn: i == 0 ? amountIn : 0,
-        //       amountOutMinimum: !isLastPoolInRoute(i) ? 0 : amountOut,
-        //     }
-        //     console.log('v3 exactInputParams: ', exactInputParams)
-
-        //     calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactInput', [exactInputParams]))
-        //   } else {
-        //     // Pair
-        //     const exactInputParams = [
-        //       i == 0 ? amountIn : 0,
-        //       !isLastPoolInRoute(i) ? 0 : amountOut,
-        //       newRoute.path.map((token) => token.address), // this should be sorted via sdk
-        //       isLastPoolInRoute(i) ? recipient : ADDRESS_THIS,
-        //     ]
-
-        //     console.log('v2 exactInputParams', exactInputParams)
-
-        //     calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactTokensForTokens', exactInputParams))
-        //   }
-        //   i++
-        // }
       }
     }
 

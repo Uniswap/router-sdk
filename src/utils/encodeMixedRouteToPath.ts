@@ -18,21 +18,21 @@ export function encodeMixedRouteToPath(route: MixedRouteSDK<Currency, Currency>,
   const { path, types } = route.pools.reduce(
     (
       { inputToken, path, types }: { inputToken: Token; path: (string | number)[]; types: string[] },
-      part: Pool | Pair,
+      pool: Pool | Pair,
       index
     ): { inputToken: Token; path: (string | number)[]; types: string[] } => {
-      const outputToken: Token = part.token0.equals(inputToken) ? part.token1 : part.token0
+      const outputToken: Token = pool.token0.equals(inputToken) ? pool.token1 : pool.token0
       if (index === 0) {
         return {
           inputToken: outputToken,
           types: ['address', 'uint24', 'address'],
-          path: [inputToken.address, part instanceof Pool ? part.fee : V2_FEE, outputToken.address],
+          path: [inputToken.address, pool instanceof Pool ? pool.fee : V2_FEE, outputToken.address],
         }
       } else {
         return {
           inputToken: outputToken,
           types: [...types, 'uint24', 'address'],
-          path: [...path, part instanceof Pool ? part.fee : V2_FEE, outputToken.address],
+          path: [...path, pool instanceof Pool ? pool.fee : V2_FEE, outputToken.address],
         }
       }
     },
