@@ -188,12 +188,13 @@ export abstract class SwapRouter {
   ): string[] {
     const calldatas: string[] = []
 
-    if (trade.tradeType !== TradeType.EXACT_INPUT) {
-      throw new Error('Mixed route trades must be exact input trades')
-    }
+    invariant(trade.tradeType === TradeType.EXACT_INPUT, 'MixedRouteTrades must be exact input')
+
+    console.log(trade.inputAmount)
 
     for (const { route, inputAmount, outputAmount } of trade.swaps) {
       const amountIn: string = toHex(trade.maximumAmountIn(options.slippageTolerance, inputAmount).quotient)
+      console.log('maximumAmountIn', amountIn)
       const amountOut: string = toHex(trade.minimumAmountOut(options.slippageTolerance, outputAmount).quotient)
 
       // flag for whether the trade is single hop or not
