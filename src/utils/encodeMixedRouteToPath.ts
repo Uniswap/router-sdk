@@ -3,9 +3,7 @@ import { Currency, Token } from '@uniswap/sdk-core'
 import { Pool } from '@uniswap/v3-sdk'
 import { Pair } from '@uniswap/v2-sdk'
 import { MixedRouteSDK } from '../entities/mixedRoute/route'
-
-/// @dev We should import this from somewhere
-const V2_FEE = 8388608
+import { V2_FEE_PATH_PLACEHOLDER } from '../constants'
 
 /**
  * Converts a route to a hex encoded path
@@ -26,13 +24,13 @@ export function encodeMixedRouteToPath(route: MixedRouteSDK<Currency, Currency>,
         return {
           inputToken: outputToken,
           types: ['address', 'uint24', 'address'],
-          path: [inputToken.address, pool instanceof Pool ? pool.fee : V2_FEE, outputToken.address],
+          path: [inputToken.address, pool instanceof Pool ? pool.fee : V2_FEE_PATH_PLACEHOLDER, outputToken.address],
         }
       } else {
         return {
           inputToken: outputToken,
           types: [...types, 'uint24', 'address'],
-          path: [...path, pool instanceof Pool ? pool.fee : V2_FEE, outputToken.address],
+          path: [...path, pool instanceof Pool ? pool.fee : V2_FEE_PATH_PLACEHOLDER, outputToken.address],
         }
       }
     },

@@ -23,7 +23,7 @@ describe.only('MixedRoute', () => {
 
   describe('path', () => {
     it('wraps pure v3 route object and successfully constructs a path from the tokens', () => {
-      /// @dev since the MixedRoute sdk object lives here in router-sdk we don't need to reconstruct it
+      /// @dev since the MixedRoute sdk object lives here in router-sdk we don't need to wrap it
       const routeOriginal = new MixedRouteSDK([pool_0_1], token0, token1)
       const route = new MixedRoute(routeOriginal)
       expect(route.pools).toEqual([pool_0_1])
@@ -68,7 +68,6 @@ describe.only('MixedRoute', () => {
     expect(route.output).toEqual(weth)
   })
 
-  /// @dev TODO
   describe('is backwards compatible with a 100% V3 route', () => {
     it('successfully assigns the protocol', () => {
       const routeOriginal = new V3RouteSDK([pool_0_1], token0, token1)
@@ -113,6 +112,7 @@ describe.only('MixedRoute', () => {
   })
 
   describe('#midPrice', () => {
+    /// @dev creating new local variables so we can easily test different pool ratios independent of other tests
     const pool_0_1 = new Pool(
       token0,
       token1,
@@ -303,6 +303,8 @@ describe.only('MixedRoute', () => {
         // is it 0.2 / 1.3334, equals 0.15
         const route = new MixedRouteSDK([pool_0_1, pair_1_2], token0, token2)
         expect(route.midPrice.toFixed(4)).toEqual('0.1500')
+
+        /// TODO: add more tests for mixed route mid price
       })
     })
   })

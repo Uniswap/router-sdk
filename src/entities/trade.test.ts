@@ -1,5 +1,3 @@
-// entities/trade.test.ts
-
 import { sqrt, Token, CurrencyAmount, TradeType, WETH9, Ether, Percent, Price } from '@uniswap/sdk-core'
 import JSBI from 'jsbi'
 import { RouteV2, RouteV3 } from './route'
@@ -918,4 +916,6 @@ describe('Trade', () => {
       expect(trade.executionPrice).toEqual(expectedPrice)
     })
   })
+
+  /// TODO: add mixedRoutes tests into here
 })

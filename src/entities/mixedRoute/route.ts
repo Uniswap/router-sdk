@@ -1,5 +1,3 @@
-// entities/mixedRoute/route
-
 import invariant from 'tiny-invariant'
 
 import { Currency, Price, Token } from '@uniswap/sdk-core'
@@ -31,7 +29,7 @@ export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
     invariant(pools.length > 0, 'POOLS')
 
     const chainId = pools[0].chainId
-    const allOnSameChain = pools.every((part) => part.chainId === chainId)
+    const allOnSameChain = pools.every((pool) => pool.chainId === chainId)
     invariant(allOnSameChain, 'CHAIN_IDS')
 
     const wrappedInput = input.wrapped
@@ -43,10 +41,10 @@ export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
      * Normalizes token0-token1 order and selects the next token/fee step to add to the path
      * */
     const tokenPath: Token[] = [wrappedInput]
-    for (const [i, part] of pools.entries()) {
+    for (const [i, pool] of pools.entries()) {
       const currentInputToken = tokenPath[i]
-      invariant(currentInputToken.equals(part.token0) || currentInputToken.equals(part.token1), 'PATH')
-      const nextToken = currentInputToken.equals(part.token0) ? part.token1 : part.token0
+      invariant(currentInputToken.equals(pool.token0) || currentInputToken.equals(pool.token1), 'PATH')
+      const nextToken = currentInputToken.equals(pool.token0) ? pool.token1 : pool.token0
       tokenPath.push(nextToken)
     }
 
@@ -66,15 +64,15 @@ export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
   public get midPrice(): Price<TInput, TOutput> {
     if (this._midPrice !== null) return this._midPrice
 
-    const getPriceForPart = (part: TPool, nextInputIsToken0: boolean) => {
-      if (part instanceof Pair) {
+    const getPriceForPool = (pool: TPool, nextInputIsToken0: boolean) => {
+      if (pool instanceof Pair) {
         return nextInputIsToken0
-          ? new Price(part.reserve0.currency, part.reserve1.currency, part.reserve0.quotient, part.reserve1.quotient)
-          : new Price(part.reserve1.currency, part.reserve0.currency, part.reserve1.quotient, part.reserve0.quotient)
-      } else if (part instanceof Pool) {
-        return nextInputIsToken0 ? part.token0Price : part.token1Price
+          ? new Price(pool.reserve0.currency, pool.reserve1.currency, pool.reserve0.quotient, pool.reserve1.quotient)
+          : new Price(pool.reserve1.currency, pool.reserve0.currency, pool.reserve1.quotient, pool.reserve0.quotient)
+      } else if (pool instanceof Pool) {
+        return nextInputIsToken0 ? pool.token0Price : pool.token1Price
       } else {
-        throw new Error('Invalid part type in mixed route')
+        throw new Error('Invalid pool type in mixed route')
       }
     }
 
@@ -83,21 +81,21 @@ export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
         return nextInput.equals(pool.token0)
           ? {
               nextInput: pool.token1,
-              price: price.multiply(getPriceForPart(pool, true)),
+              price: price.multiply(getPriceForPool(pool, true)),
             }
           : {
               nextInput: pool.token0,
-              price: price.multiply(getPriceForPart(pool, false)),
+              price: price.multiply(getPriceForPool(pool, false)),
             }
       },
       this.pools[0].token0.equals(this.input.wrapped)
         ? {
             nextInput: this.pools[0].token1,
-            price: getPriceForPart(this.pools[0], true),
+            price: getPriceForPool(this.pools[0], true),
           }
         : {
             nextInput: this.pools[0].token0,
-            price: getPriceForPart(this.pools[0], false),
+            price: getPriceForPool(this.pools[0], false),
           }
     ).price
 

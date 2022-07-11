@@ -5,3 +5,5 @@ export const ADDRESS_THIS = '0x0000000000000000000000000000000000000002'
 
 export const ZERO = JSBI.BigInt(0)
 export const ONE = JSBI.BigInt(1)
+
+export const V2_FEE_PATH_PLACEHOLDER = 8388608

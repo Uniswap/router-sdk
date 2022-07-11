@@ -191,8 +191,7 @@ export abstract class SwapRouter {
   private static encodeMixedRouteSwap(
     trade: MixedRouteTrade<Currency, Currency, TradeType>,
     options: SwapOptions,
-    /// @dev we might not need these two flags since that behavior is assumed to happen for mixed route
-    /// they are not used in mixedRouteTrade calldata generation but passed to encodeV3Swap and encodeV2Swap in case of singleHop
+    /// @dev these are not used in mixedRouteTrade calldata generation but passed to encodeV3Swap and encodeV2Swap in case of singleHop
     routerMustCustody: boolean,
     performAggregatedSlippageCheck: boolean
   ): string[] {
@@ -353,7 +352,7 @@ export abstract class SwapRouter {
     minimumAmountOut: CurrencyAmount<Currency>
     quoteAmountOut: CurrencyAmount<Currency>
   } {
-    // If dealing with an instance of the aggregated Trade object, unbundle it to individual V2Trade and V3Trade objects.
+    // If dealing with an instance of the aggregated Trade object, unbundle it to individual trade objects.
     if (trades instanceof Trade) {
       invariant(
         trades.swaps.every(
@@ -365,7 +364,7 @@ export abstract class SwapRouter {
         'UNSUPPORTED_PROTOCOL'
       )
 
-      let v2Andv3Trades: (
+      let individualTrades: (
         | V2Trade<Currency, Currency, TradeType>
         | V3Trade<Currency, Currency, TradeType>
         | MixedRouteTrade<Currency, Currency, TradeType>
@@ -373,7 +372,7 @@ export abstract class SwapRouter {
 
       for (const { route, inputAmount, outputAmount } of trades.swaps) {
         if (route.protocol == Protocol.V2) {
-          v2Andv3Trades.push(
+          individualTrades.push(
             new V2Trade(
               route as RouteV2<Currency, Currency>,
               trades.tradeType == TradeType.EXACT_INPUT ? inputAmount : outputAmount,
@@ -381,7 +380,7 @@ export abstract class SwapRouter {
             )
           )
         } else if (route.protocol == Protocol.V3) {
-          v2Andv3Trades.push(
+          individualTrades.push(
             V3Trade.createUncheckedTrade({
               route: route as RouteV3<Currency, Currency>,
               inputAmount,
@@ -390,7 +389,7 @@ export abstract class SwapRouter {
             })
           )
         } else if (route.protocol == Protocol.MIXED) {
-          v2Andv3Trades.push(
+          individualTrades.push(
             /// we can change the naming of this function on MixedRouteTrade if needed
             MixedRouteTrade.createUncheckedTrade({
               route: route as MixedRoute<Currency, Currency>,
@@ -400,10 +399,10 @@ export abstract class SwapRouter {
             })
           )
         } else {
-          throw new Error('UNSUPPORTED_PROTOCOL')
+          throw new Error('UNSUPPORTED_TRADE_PROTOCOL')
         }
       }
-      trades = v2Andv3Trades
+      trades = individualTrades
     }
 
     if (!Array.isArray(trades)) {

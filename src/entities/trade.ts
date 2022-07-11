@@ -106,7 +106,7 @@ export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType
           const pair = pool
           poolAddressSet.add(Pair.getAddress(pair.token0, pair.token1))
         } else {
-          throw new Error('unexpected pool type')
+          throw new Error('Unexpected pool type in route when constructing trade object')
         }
       }
     }

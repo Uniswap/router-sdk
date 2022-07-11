@@ -108,6 +108,7 @@ describe('MixedRouteTrade', () => {
     CurrencyAmount.fromRawAmount(token1, JSBI.BigInt(0))
   )
 
+  /// @dev copied over from v3-sdk trade.test.ts
   describe('is backwards compatible with pure v3 routes', () => {
     describe('#fromRoute', () => {
       it('can be constructed with ETHER as input', async () => {
@@ -578,6 +579,7 @@ describe('MixedRouteTrade', () => {
     })
   })
 
+  /// @dev copied over from v2-sdk trade.test.ts
   describe('is backwards compatible with pure v2 routes', () => {
     it('can be constructed with ETHER as input', async () => {
       const trade = await MixedRouteTrade.fromRoute(
