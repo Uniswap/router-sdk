@@ -24,8 +24,8 @@ export function tradeComparator<TInput extends Currency, TOutput extends Currenc
   if (a.outputAmount.equalTo(b.outputAmount)) {
     if (a.inputAmount.equalTo(b.inputAmount)) {
       // consider the number of hops since each hop costs gas
-      const aHops = a.swaps.reduce((total, cur) => total + cur.route.tokenPath.length, 0)
-      const bHops = b.swaps.reduce((total, cur) => total + cur.route.tokenPath.length, 0)
+      const aHops = a.swaps.reduce((total, cur) => total + cur.route.path.length, 0)
+      const bHops = b.swaps.reduce((total, cur) => total + cur.route.path.length, 0)
       return aHops - bHops
     }
     // trade A requires less input than trade B, so A should come first
@@ -214,7 +214,7 @@ export class MixedRouteTrade<TInput extends Currency, TOutput extends Currency, 
     amount: TTradeType extends TradeType.EXACT_INPUT ? CurrencyAmount<TInput> : CurrencyAmount<TOutput>,
     tradeType: TTradeType
   ): Promise<MixedRouteTrade<TInput, TOutput, TTradeType>> {
-    const amounts: CurrencyAmount<Token>[] = new Array(route.tokenPath.length)
+    const amounts: CurrencyAmount<Token>[] = new Array(route.path.length)
     let inputAmount: CurrencyAmount<TInput>
     let outputAmount: CurrencyAmount<TOutput>
 
@@ -222,7 +222,7 @@ export class MixedRouteTrade<TInput extends Currency, TOutput extends Currency, 
 
     invariant(amount.currency.equals(route.input), 'INPUT')
     amounts[0] = amount.wrapped
-    for (let i = 0; i < route.tokenPath.length - 1; i++) {
+    for (let i = 0; i < route.path.length - 1; i++) {
       const pool = route.pools[i]
       const [outputAmount] = await pool.getOutputAmount(amounts[i])
       amounts[i + 1] = outputAmount
@@ -266,7 +266,7 @@ export class MixedRouteTrade<TInput extends Currency, TOutput extends Currency, 
     invariant(tradeType === TradeType.EXACT_INPUT, 'MixedRouteTrade.fromRoutes: tradeType must be EXACT_INPUT')
 
     for (const { route, amount } of routes) {
-      const amounts: CurrencyAmount<Token>[] = new Array(route.tokenPath.length)
+      const amounts: CurrencyAmount<Token>[] = new Array(route.path.length)
       let inputAmount: CurrencyAmount<TInput>
       let outputAmount: CurrencyAmount<TOutput>
 
@@ -274,7 +274,7 @@ export class MixedRouteTrade<TInput extends Currency, TOutput extends Currency, 
       inputAmount = CurrencyAmount.fromFractionalAmount(route.input, amount.numerator, amount.denominator)
       amounts[0] = CurrencyAmount.fromFractionalAmount(route.input.wrapped, amount.numerator, amount.denominator)
 
-      for (let i = 0; i < route.tokenPath.length - 1; i++) {
+      for (let i = 0; i < route.path.length - 1; i++) {
         const pool = route.pools[i]
         const [outputAmount] = await pool.getOutputAmount(amounts[i])
         amounts[i + 1] = outputAmount

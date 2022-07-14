@@ -303,7 +303,6 @@ export abstract class SwapRouter {
               amountIn: i == 0 ? amountIn : 0,
               amountOutMinimum: !isLastSectionInRoute(i) ? 0 : amountOut,
             }
-            console.log('v3 exactInputParams: ', exactInputParams)
 
             calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactInput', [exactInputParams]))
           } else {
@@ -314,8 +313,6 @@ export abstract class SwapRouter {
               newRoute.path.map((token) => token.address), // this should be sorted via sdk
               isLastSectionInRoute(i) ? recipient : ADDRESS_THIS,
             ]
-
-            console.log('v2 exactInputParams', exactInputParams)
 
             calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactTokensForTokens', exactInputParams))
           }

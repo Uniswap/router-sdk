@@ -50,12 +50,8 @@ export class MixedRoute<TInput extends Currency, TOutput extends Currency>
   implements IRoute<TInput, TOutput, Pool | Pair>
 {
   public readonly protocol: Protocol = Protocol.MIXED
-  public readonly pools: (Pool | Pair)[]
-  public readonly path: Token[]
 
   constructor(mixedRoute: MixedRouteSDK<TInput, TOutput>) {
     super(mixedRoute.pools, mixedRoute.input, mixedRoute.output)
-    this.pools = mixedRoute.pools
-    this.path = mixedRoute.tokenPath
   }
 }

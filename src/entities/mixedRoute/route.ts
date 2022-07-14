@@ -7,13 +7,13 @@ import { Pair } from '@uniswap/v2-sdk'
 type TPool = Pair | Pool
 
 /**
- * Represents a list of pools through which a swap can occur
+ * Represents a list of pools or pairs through which a swap can occur
  * @template TInput The input token
  * @template TOutput The output token
  */
 export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
   public readonly pools: TPool[]
-  public readonly tokenPath: Token[]
+  public readonly path: Token[]
   public readonly input: TInput
   public readonly output: TOutput
 
@@ -21,7 +21,7 @@ export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
 
   /**
    * Creates an instance of route.
-   * @param pools An array of `Pool` objects, ordered by the route the swap will take
+   * @param pools An array of `TPool` objects (pools or pairs), ordered by the route the swap will take
    * @param input The input token
    * @param output The output token
    */
@@ -49,7 +49,7 @@ export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
     }
 
     this.pools = pools
-    this.tokenPath = tokenPath
+    this.path = tokenPath
     this.input = input
     this.output = output ?? tokenPath[tokenPath.length - 1]
   }

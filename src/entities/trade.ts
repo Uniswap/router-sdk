@@ -315,38 +315,32 @@ export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType
       routev2: V2RouteSDK<TInput, TOutput>
       inputAmount: CurrencyAmount<TInput>
       outputAmount: CurrencyAmount<TOutput>
-    }[]
+    }[] = []
 
     let v3Routes: {
       routev3: V3RouteSDK<TInput, TOutput>
       inputAmount: CurrencyAmount<TInput>
       outputAmount: CurrencyAmount<TOutput>
-    }[]
+    }[] = []
 
     let mixedRoutes: {
       mixedRoute: MixedRouteSDK<TInput, TOutput>
       inputAmount: CurrencyAmount<TInput>
       outputAmount: CurrencyAmount<TOutput>
-    }[]
+    }[] = []
 
     if (route instanceof V2RouteSDK) {
       const v2Trade = new V2TradeSDK(route, amount, tradeType)
       const { inputAmount, outputAmount } = v2Trade
       v2Routes = [{ routev2: route, inputAmount, outputAmount }]
-      v3Routes = []
-      mixedRoutes = []
     } else if (route instanceof V3RouteSDK) {
       const v3Trade = await V3TradeSDK.fromRoute(route, amount, tradeType)
       const { inputAmount, outputAmount } = v3Trade
       v3Routes = [{ routev3: route, inputAmount, outputAmount }]
-      v2Routes = []
-      mixedRoutes = []
     } else if (route instanceof MixedRouteSDK) {
       const mixedRouteTrade = await MixedRouteTradeSDK.fromRoute(route, amount, tradeType)
       const { inputAmount, outputAmount } = mixedRouteTrade
       mixedRoutes = [{ mixedRoute: route, inputAmount, outputAmount }]
-      v2Routes = []
-      v3Routes = []
     } else {
       throw new Error('Invalid route type')
     }

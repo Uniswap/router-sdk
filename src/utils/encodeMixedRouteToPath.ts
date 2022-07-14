@@ -7,10 +7,10 @@ import { V2_FEE_PATH_PLACEHOLDER } from '../constants'
 
 /**
  * Converts a route to a hex encoded path
+ * @notice only supports exactIn route encodings
  * @param route the mixed path to convert to an encoded path
- * @param exactOutput whether the route should be encoded in reverse, for making exact output swaps
  */
-export function encodeMixedRouteToPath(route: MixedRouteSDK<Currency, Currency>, exactOutput: boolean): string {
+export function encodeMixedRouteToPath(route: MixedRouteSDK<Currency, Currency>): string {
   const firstInputToken: Token = route.input.wrapped
 
   const { path, types } = route.pools.reduce(
@@ -37,5 +37,5 @@ export function encodeMixedRouteToPath(route: MixedRouteSDK<Currency, Currency>,
     { inputToken: firstInputToken, path: [], types: [] }
   )
 
-  return exactOutput ? pack(types.reverse(), path.reverse()) : pack(types, path)
+  return pack(types, path)
 }

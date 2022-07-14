@@ -422,11 +422,11 @@ describe('MixedRouteTrade', () => {
         )
         expect(result).toHaveLength(2)
         expect(result[0].swaps[0].route.pools).toHaveLength(1) // 0 -> 2 at 10:11
-        expect(result[0].swaps[0].route.tokenPath).toEqual([token0, token2])
+        expect(result[0].swaps[0].route.path).toEqual([token0, token2])
         expect(result[0].inputAmount.equalTo(CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(10000)))).toBeTruthy()
         expect(result[0].outputAmount.equalTo(CurrencyAmount.fromRawAmount(token2, JSBI.BigInt(9971)))).toBeTruthy()
         expect(result[1].swaps[0].route.pools).toHaveLength(2) // 0 -> 1 -> 2 at 12:12:10
-        expect(result[1].swaps[0].route.tokenPath).toEqual([token0, token1, token2])
+        expect(result[1].swaps[0].route.path).toEqual([token0, token1, token2])
         expect(result[1].inputAmount.equalTo(CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(10000)))).toBeTruthy()
         expect(result[1].outputAmount.equalTo(CurrencyAmount.fromRawAmount(token2, JSBI.BigInt(7004)))).toBeTruthy()
       })
@@ -440,7 +440,7 @@ describe('MixedRouteTrade', () => {
         )
         expect(result).toHaveLength(1)
         expect(result[0].swaps[0].route.pools).toHaveLength(1) // 0 -> 2 at 10:11
-        expect(result[0].swaps[0].route.tokenPath).toEqual([token0, token2])
+        expect(result[0].swaps[0].route.path).toEqual([token0, token2])
       })
 
       it('insufficient input for one pool', async () => {
@@ -451,7 +451,7 @@ describe('MixedRouteTrade', () => {
         )
         expect(result).toHaveLength(2)
         expect(result[0].swaps[0].route.pools).toHaveLength(1) // 0 -> 2 at 10:11
-        expect(result[0].swaps[0].route.tokenPath).toEqual([token0, token2])
+        expect(result[0].swaps[0].route.path).toEqual([token0, token2])
         expect(result[0].outputAmount).toEqual(CurrencyAmount.fromRawAmount(token2, 0))
       })
 
@@ -483,10 +483,10 @@ describe('MixedRouteTrade', () => {
         )
         expect(result).toHaveLength(2)
         expect(result[0].inputAmount.currency).toEqual(ETHER)
-        expect(result[0].swaps[0].route.tokenPath).toEqual([WETH9[1], token0, token1, token3])
+        expect(result[0].swaps[0].route.path).toEqual([WETH9[1], token0, token1, token3])
         expect(result[0].outputAmount.currency).toEqual(token3)
         expect(result[1].inputAmount.currency).toEqual(ETHER)
-        expect(result[1].swaps[0].route.tokenPath).toEqual([WETH9[1], token0, token3])
+        expect(result[1].swaps[0].route.path).toEqual([WETH9[1], token0, token3])
         expect(result[1].outputAmount.currency).toEqual(token3)
       })
 
@@ -498,10 +498,10 @@ describe('MixedRouteTrade', () => {
         )
         expect(result).toHaveLength(2)
         expect(result[0].inputAmount.currency).toEqual(token3)
-        expect(result[0].swaps[0].route.tokenPath).toEqual([token3, token0, WETH9[1]])
+        expect(result[0].swaps[0].route.path).toEqual([token3, token0, WETH9[1]])
         expect(result[0].outputAmount.currency).toEqual(ETHER)
         expect(result[1].inputAmount.currency).toEqual(token3)
-        expect(result[1].swaps[0].route.tokenPath).toEqual([token3, token1, token0, WETH9[1]])
+        expect(result[1].swaps[0].route.path).toEqual([token3, token1, token0, WETH9[1]])
         expect(result[1].outputAmount.currency).toEqual(ETHER)
       })
     })
@@ -623,11 +623,11 @@ describe('MixedRouteTrade', () => {
         )
         expect(result).toHaveLength(2)
         expect(result[0].swaps[0].route.pools).toHaveLength(1) // 0 -> 2 at 10:11
-        expect(result[0].swaps[0].route.tokenPath).toEqual([token0, token2])
+        expect(result[0].swaps[0].route.path).toEqual([token0, token2])
         expect(result[0].inputAmount).toEqual(CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(100)))
         expect(result[0].outputAmount).toEqual(CurrencyAmount.fromRawAmount(token2, JSBI.BigInt(99)))
         expect(result[1].swaps[0].route.pools).toHaveLength(2) // 0 -> 1 -> 2 at 12:12:10
-        expect(result[1].swaps[0].route.tokenPath).toEqual([token0, token1, token2])
+        expect(result[1].swaps[0].route.path).toEqual([token0, token1, token2])
         expect(result[1].inputAmount).toEqual(CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(100)))
         expect(result[1].outputAmount).toEqual(CurrencyAmount.fromRawAmount(token2, JSBI.BigInt(69)))
       })
@@ -651,7 +651,7 @@ describe('MixedRouteTrade', () => {
         )
         expect(result).toHaveLength(1)
         expect(result[0].swaps[0].route.pools).toHaveLength(1) // 0 -> 2 at 10:11
-        expect(result[0].swaps[0].route.tokenPath).toEqual([token0, token2])
+        expect(result[0].swaps[0].route.path).toEqual([token0, token2])
       })
 
       it('insufficient input for one pair', async () => {
@@ -662,7 +662,7 @@ describe('MixedRouteTrade', () => {
         )
         expect(result).toHaveLength(1)
         expect(result[0].swaps[0].route.pools).toHaveLength(1) // 0 -> 2 at 10:11
-        expect(result[0].swaps[0].route.tokenPath).toEqual([token0, token2])
+        expect(result[0].swaps[0].route.path).toEqual([token0, token2])
         expect(result[0].outputAmount).toEqual(CurrencyAmount.fromRawAmount(token2, JSBI.BigInt(1)))
       })
 
@@ -694,10 +694,10 @@ describe('MixedRouteTrade', () => {
         )
         expect(result).toHaveLength(2)
         expect(result[0].inputAmount.currency).toEqual(ETHER)
-        expect(result[0].swaps[0].route.tokenPath).toEqual([WETH9[1], token0, token1, token3])
+        expect(result[0].swaps[0].route.path).toEqual([WETH9[1], token0, token1, token3])
         expect(result[0].outputAmount.currency).toEqual(token3)
         expect(result[1].inputAmount.currency).toEqual(ETHER)
-        expect(result[1].swaps[0].route.tokenPath).toEqual([WETH9[1], token0, token3])
+        expect(result[1].swaps[0].route.path).toEqual([WETH9[1], token0, token3])
         expect(result[1].outputAmount.currency).toEqual(token3)
       })
       it('works for ETHER currency output', async () => {
@@ -708,10 +708,10 @@ describe('MixedRouteTrade', () => {
         )
         expect(result).toHaveLength(2)
         expect(result[0].inputAmount.currency).toEqual(token3)
-        expect(result[0].swaps[0].route.tokenPath).toEqual([token3, token0, WETH9[1]])
+        expect(result[0].swaps[0].route.path).toEqual([token3, token0, WETH9[1]])
         expect(result[0].outputAmount.currency).toEqual(ETHER)
         expect(result[1].inputAmount.currency).toEqual(token3)
-        expect(result[1].swaps[0].route.tokenPath).toEqual([token3, token1, token0, WETH9[1]])
+        expect(result[1].swaps[0].route.path).toEqual([token3, token1, token0, WETH9[1]])
         expect(result[1].outputAmount.currency).toEqual(ETHER)
       })
     })
@@ -1115,11 +1115,11 @@ describe('MixedRouteTrade', () => {
 
         expect(result).toHaveLength(2)
         expect(result[0].swaps[0].route.pools).toHaveLength(1) // 0 -> 2 at 10:11
-        expect(result[0].swaps[0].route.tokenPath).toEqual([token0, token2])
+        expect(result[0].swaps[0].route.path).toEqual([token0, token2])
         expect(result[0].inputAmount.equalTo(CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(10000)))).toBeTruthy()
         expect(result[0].outputAmount.equalTo(CurrencyAmount.fromRawAmount(token2, JSBI.BigInt(9971)))).toBeTruthy()
         expect(result[1].swaps[0].route.pools).toHaveLength(2) // 0 -> 1 -> 2 at 12:12:10
-        expect(result[1].swaps[0].route.tokenPath).toEqual([token0, token1, token2])
+        expect(result[1].swaps[0].route.path).toEqual([token0, token1, token2])
         expect(result[1].inputAmount.equalTo(CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(10000)))).toBeTruthy()
         expect(result[1].outputAmount.equalTo(CurrencyAmount.fromRawAmount(token2, JSBI.BigInt(7004)))).toBeTruthy()
       })
@@ -1133,7 +1133,7 @@ describe('MixedRouteTrade', () => {
         )
         expect(result).toHaveLength(1)
         expect(result[0].swaps[0].route.pools).toHaveLength(1) // 0 -> 2 at 10:11
-        expect(result[0].swaps[0].route.tokenPath).toEqual([token0, token2])
+        expect(result[0].swaps[0].route.path).toEqual([token0, token2])
       })
 
       it('insufficient input for one pool', async () => {
@@ -1146,7 +1146,7 @@ describe('MixedRouteTrade', () => {
 
         expect(result).toHaveLength(1)
         expect(result[0].swaps[0].route.pools).toHaveLength(1)
-        expect(result[0].swaps[0].route.tokenPath).toEqual([token0, token2])
+        expect(result[0].swaps[0].route.path).toEqual([token0, token2])
         expect(result[0].outputAmount).toEqual(CurrencyAmount.fromRawAmount(token2, 0))
       })
 
@@ -1178,10 +1178,10 @@ describe('MixedRouteTrade', () => {
         )
         expect(result).toHaveLength(2)
         expect(result[0].inputAmount.currency).toEqual(ETHER)
-        expect(result[0].swaps[0].route.tokenPath).toEqual([WETH9[1], token0, token1, token3])
+        expect(result[0].swaps[0].route.path).toEqual([WETH9[1], token0, token1, token3])
         expect(result[0].outputAmount.currency).toEqual(token3)
         expect(result[1].inputAmount.currency).toEqual(ETHER)
-        expect(result[1].swaps[0].route.tokenPath).toEqual([WETH9[1], token0, token3])
+        expect(result[1].swaps[0].route.path).toEqual([WETH9[1], token0, token3])
         expect(result[1].outputAmount.currency).toEqual(token3)
       })
 
@@ -1193,10 +1193,10 @@ describe('MixedRouteTrade', () => {
         )
         expect(result).toHaveLength(2)
         expect(result[0].inputAmount.currency).toEqual(token3)
-        expect(result[0].swaps[0].route.tokenPath).toEqual([token3, token0, WETH9[1]])
+        expect(result[0].swaps[0].route.path).toEqual([token3, token0, WETH9[1]])
         expect(result[0].outputAmount.currency).toEqual(ETHER)
         expect(result[1].inputAmount.currency).toEqual(token3)
-        expect(result[1].swaps[0].route.tokenPath).toEqual([token3, token1, token0, WETH9[1]])
+        expect(result[1].swaps[0].route.path).toEqual([token3, token1, token0, WETH9[1]])
         expect(result[1].outputAmount.currency).toEqual(ETHER)
       })
     })

@@ -5,7 +5,7 @@ import { Protocol } from '../protocol'
 import { Route as V2RouteSDK, Pair } from '@uniswap/v2-sdk'
 import { MixedRouteSDK } from './route'
 
-describe.only('MixedRoute', () => {
+describe('MixedRoute', () => {
   const ETHER = Ether.onChain(1)
   const token0 = new Token(1, '0x0000000000000000000000000000000000000001', 18, 't0')
   const token1 = new Token(1, '0x0000000000000000000000000000000000000002', 18, 't1')
@@ -27,7 +27,7 @@ describe.only('MixedRoute', () => {
       const routeOriginal = new MixedRouteSDK([pool_0_1], token0, token1)
       const route = new MixedRoute(routeOriginal)
       expect(route.pools).toEqual([pool_0_1])
-      expect(route.tokenPath).toEqual([token0, token1])
+      expect(route.path).toEqual([token0, token1])
       expect(route.input).toEqual(token0)
       expect(route.output).toEqual(token1)
       expect(route.chainId).toEqual(1)
@@ -36,7 +36,7 @@ describe.only('MixedRoute', () => {
     it('wraps pure v2 route object and successfully constructs a path from the tokens', () => {
       const route = new MixedRouteSDK([pair_0_1], token0, token1)
       expect(route.pools).toEqual([pair_0_1])
-      expect(route.tokenPath).toEqual([token0, token1])
+      expect(route.path).toEqual([token0, token1])
       expect(route.input).toEqual(token0)
       expect(route.output).toEqual(token1)
       expect(route.chainId).toEqual(1)
@@ -45,7 +45,7 @@ describe.only('MixedRoute', () => {
     it('wraps mixed route object and successfully constructs a path from the tokens', () => {
       const route = new MixedRouteSDK([pool_0_1, pair_1_weth], token0, weth)
       expect(route.pools).toEqual([pool_0_1, pair_1_weth])
-      expect(route.tokenPath).toEqual([token0, token1, weth])
+      expect(route.path).toEqual([token0, token1, weth])
       expect(route.input).toEqual(token0)
       expect(route.output).toEqual(weth)
       expect(route.chainId).toEqual(1)
@@ -54,7 +54,7 @@ describe.only('MixedRoute', () => {
     it('wraps complex mixed route object and successfully constructs a path from the tokens', () => {
       const route = new MixedRouteSDK([pool_0_1, pair_1_weth, pair_weth_2], token0, token2)
       expect(route.pools).toEqual([pool_0_1, pair_1_weth, pair_weth_2])
-      expect(route.tokenPath).toEqual([token0, token1, weth, token2])
+      expect(route.path).toEqual([token0, token1, weth, token2])
       expect(route.input).toEqual(token0)
       expect(route.output).toEqual(token2)
       expect(route.chainId).toEqual(1)
@@ -157,65 +157,81 @@ describe.only('MixedRoute', () => {
 
     describe('100% V3 pool route', () => {
       it('correct for 0 -> 1', () => {
-        const price = new MixedRouteSDK([pool_0_1], token0, token1).midPrice
-        expect(price.toFixed(4)).toEqual('0.2000')
-        expect(price.baseCurrency.equals(token0)).toEqual(true)
-        expect(price.quoteCurrency.equals(token1)).toEqual(true)
+        const routeV3SDK = new V3RouteSDK([pool_0_1], token0, token1)
+        const route = new MixedRouteSDK([pool_0_1], token0, token1)
+        expect(route.midPrice.toFixed(4)).toEqual(routeV3SDK.midPrice.toFixed(4))
+        expect(route.midPrice.toFixed(4)).toEqual('0.2000')
+        expect(route.midPrice.baseCurrency.equals(token0)).toEqual(true)
+        expect(route.midPrice.quoteCurrency.equals(token1)).toEqual(true)
       })
 
       it('is cached', () => {
-        const routeOriginal = new V3RouteSDK([pool_0_1], token0, token1)
-        const route = new RouteV3(routeOriginal)
+        const routeOriginal = new MixedRouteSDK([pool_0_1], token0, token1)
+        const route = new MixedRoute(routeOriginal)
         expect(route.midPrice).toStrictEqual(route.midPrice)
       })
 
       it('correct for 1 -> 0', () => {
-        const price = new MixedRouteSDK([pool_0_1], token1, token0).midPrice
-        expect(price.toFixed(4)).toEqual('5.0000')
-        expect(price.baseCurrency.equals(token1)).toEqual(true)
-        expect(price.quoteCurrency.equals(token0)).toEqual(true)
+        const routeV3SDK = new V3RouteSDK([pool_0_1], token1, token0)
+        const route = new MixedRouteSDK([pool_0_1], token1, token0)
+        expect(route.midPrice.toFixed(4)).toEqual(routeV3SDK.midPrice.toFixed(4))
+        expect(route.midPrice.toFixed(4)).toEqual('5.0000')
+        expect(route.midPrice.baseCurrency.equals(token1)).toEqual(true)
+        expect(route.midPrice.quoteCurrency.equals(token0)).toEqual(true)
       })
 
       it('correct for 0 -> 1 -> 2', () => {
-        const price = new MixedRouteSDK([pool_0_1, pool_1_2], token0, token2).midPrice
-        expect(price.toFixed(4)).toEqual('0.1000')
-        expect(price.baseCurrency.equals(token0)).toEqual(true)
-        expect(price.quoteCurrency.equals(token2)).toEqual(true)
+        const routeV3SDK = new V3RouteSDK([pool_0_1, pool_1_2], token0, token2)
+        const route = new MixedRouteSDK([pool_0_1, pool_1_2], token0, token2)
+        expect(route.midPrice.toFixed(4)).toEqual(routeV3SDK.midPrice.toFixed(4))
+        expect(route.midPrice.toFixed(4)).toEqual('0.1000')
+        expect(route.midPrice.baseCurrency.equals(token0)).toEqual(true)
+        expect(route.midPrice.quoteCurrency.equals(token2)).toEqual(true)
       })
 
       it('correct for 2 -> 1 -> 0', () => {
-        const price = new MixedRouteSDK([pool_1_2, pool_0_1], token2, token0).midPrice
-        expect(price.toFixed(4)).toEqual('10.0000')
-        expect(price.baseCurrency.equals(token2)).toEqual(true)
-        expect(price.quoteCurrency.equals(token0)).toEqual(true)
+        const routeV3SDK = new V3RouteSDK([pool_1_2, pool_0_1], token2, token0)
+        const route = new MixedRouteSDK([pool_1_2, pool_0_1], token2, token0)
+        expect(route.midPrice.toFixed(4)).toEqual(routeV3SDK.midPrice.toFixed(4))
+        expect(route.midPrice.toFixed(4)).toEqual('10.0000')
+        expect(route.midPrice.baseCurrency.equals(token2)).toEqual(true)
+        expect(route.midPrice.quoteCurrency.equals(token0)).toEqual(true)
       })
 
       it('correct for ether -> 0', () => {
-        const price = new MixedRouteSDK([pool_0_weth], ETHER, token0).midPrice
-        expect(price.toFixed(4)).toEqual('0.3333')
-        expect(price.baseCurrency.equals(ETHER)).toEqual(true)
-        expect(price.quoteCurrency.equals(token0)).toEqual(true)
+        const routeV3SDK = new V3RouteSDK([pool_0_weth], ETHER, token0)
+        const route = new MixedRouteSDK([pool_0_weth], ETHER, token0)
+        expect(route.midPrice.toFixed(4)).toEqual(routeV3SDK.midPrice.toFixed(4))
+        expect(route.midPrice.toFixed(4)).toEqual('0.3333')
+        expect(route.midPrice.baseCurrency.equals(ETHER)).toEqual(true)
+        expect(route.midPrice.quoteCurrency.equals(token0)).toEqual(true)
       })
 
       it('correct for 1 -> weth', () => {
-        const price = new MixedRouteSDK([pool_1_weth], token1, weth).midPrice
-        expect(price.toFixed(4)).toEqual('0.1429')
-        expect(price.baseCurrency.equals(token1)).toEqual(true)
-        expect(price.quoteCurrency.equals(weth)).toEqual(true)
+        const routeV3SDK = new V3RouteSDK([pool_1_weth], token1, weth)
+        const route = new MixedRouteSDK([pool_1_weth], token1, weth)
+        expect(route.midPrice.toFixed(4)).toEqual(routeV3SDK.midPrice.toFixed(4))
+        expect(route.midPrice.toFixed(4)).toEqual('0.1429')
+        expect(route.midPrice.baseCurrency.equals(token1)).toEqual(true)
+        expect(route.midPrice.quoteCurrency.equals(weth)).toEqual(true)
       })
 
       it('correct for ether -> 0 -> 1 -> weth', () => {
-        const price = new MixedRouteSDK([pool_0_weth, pool_0_1, pool_1_weth], ETHER, weth).midPrice
-        expect(price.toSignificant(4)).toEqual('0.009524')
-        expect(price.baseCurrency.equals(ETHER)).toEqual(true)
-        expect(price.quoteCurrency.equals(weth)).toEqual(true)
+        const routeV3SDK = new V3RouteSDK([pool_0_weth, pool_0_1, pool_1_weth], ETHER, weth)
+        const route = new MixedRouteSDK([pool_0_weth, pool_0_1, pool_1_weth], ETHER, weth)
+        expect(route.midPrice.toFixed(4)).toEqual(routeV3SDK.midPrice.toFixed(4))
+        expect(route.midPrice.toSignificant(4)).toEqual('0.009524')
+        expect(route.midPrice.baseCurrency.equals(ETHER)).toEqual(true)
+        expect(route.midPrice.quoteCurrency.equals(weth)).toEqual(true)
       })
 
       it('correct for weth -> 0 -> 1 -> ether', () => {
-        const price = new MixedRouteSDK([pool_0_weth, pool_0_1, pool_1_weth], weth, ETHER).midPrice
-        expect(price.toSignificant(4)).toEqual('0.009524')
-        expect(price.baseCurrency.equals(weth)).toEqual(true)
-        expect(price.quoteCurrency.equals(ETHER)).toEqual(true)
+        const routeV3SDK = new V3RouteSDK([pool_0_weth, pool_0_1, pool_1_weth], weth, ETHER)
+        const route = new MixedRouteSDK([pool_0_weth, pool_0_1, pool_1_weth], weth, ETHER)
+        expect(route.midPrice.toFixed(4)).toEqual(routeV3SDK.midPrice.toFixed(4))
+        expect(route.midPrice.toSignificant(4)).toEqual('0.009524')
+        expect(route.midPrice.baseCurrency.equals(weth)).toEqual(true)
+        expect(route.midPrice.quoteCurrency.equals(ETHER)).toEqual(true)
       })
     })
 

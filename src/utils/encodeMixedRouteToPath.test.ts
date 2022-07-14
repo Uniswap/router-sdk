@@ -43,174 +43,96 @@ describe('#encodeMixedRouteToPath', () => {
 
   describe('pure V3', () => {
     it('packs them for exact input single hop', () => {
-      expect(encodeMixedRouteToPath(route_0_V3_1, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_0_V3_1)).toEqual(
         '0x0000000000000000000000000000000000000001000bb80000000000000000000000000000000000000002'
       )
     })
 
-    it('packs them correctly for exact output single hop', () => {
-      expect(encodeMixedRouteToPath(route_0_V3_1, true)).toEqual(
-        '0x0000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001'
-      )
-    })
-
     it('packs them correctly for multihop exact input', () => {
-      expect(encodeMixedRouteToPath(route_0_V3_1_V3_2, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_0_V3_1_V3_2)).toEqual(
         '0x0000000000000000000000000000000000000001000bb800000000000000000000000000000000000000020001f40000000000000000000000000000000000000003'
       )
     })
 
-    it('packs them correctly for multihop exact output', () => {
-      expect(encodeMixedRouteToPath(route_0_V3_1_V3_2, true)).toEqual(
-        '0x00000000000000000000000000000000000000030001f40000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001'
-      )
-    })
-
     it('wraps ether input for exact input single hop', () => {
-      expect(encodeMixedRouteToPath(route_weth_V3_0, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_weth_V3_0)).toEqual(
         '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000001'
       )
     })
-    it('wraps ether input for exact output single hop', () => {
-      expect(encodeMixedRouteToPath(route_weth_V3_0, true)).toEqual(
-        '0x0000000000000000000000000000000000000001000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
-      )
-    })
+
     it('wraps ether input for exact input multihop', () => {
-      expect(encodeMixedRouteToPath(route_weth_V3_0_V3_1, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_weth_V3_0_V3_1)).toEqual(
         '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000001000bb80000000000000000000000000000000000000002'
-      )
-    })
-    it('wraps ether input for exact output multihop', () => {
-      expect(encodeMixedRouteToPath(route_weth_V3_0_V3_1, true)).toEqual(
-        '0x0000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
       )
     })
 
     it('wraps ether output for exact input single hop', () => {
-      expect(encodeMixedRouteToPath(route_0_V3_weth, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_0_V3_weth)).toEqual(
         '0x0000000000000000000000000000000000000001000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
       )
     })
-    it('wraps ether output for exact output single hop', () => {
-      expect(encodeMixedRouteToPath(route_0_V3_weth, true)).toEqual(
-        '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000001'
-      )
-    })
+
     it('wraps ether output for exact input multihop', () => {
-      expect(encodeMixedRouteToPath(route_0_V3_1_V3_weth, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_0_V3_1_V3_weth)).toEqual(
         '0x0000000000000000000000000000000000000001000bb80000000000000000000000000000000000000002000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
-      )
-    })
-    it('wraps ether output for exact output multihop', () => {
-      expect(encodeMixedRouteToPath(route_0_V3_1_V3_weth, true)).toEqual(
-        '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001'
       )
     })
   })
 
   describe('pure V2', () => {
     it('packs them for exact input single hop', () => {
-      expect(encodeMixedRouteToPath(route_0_V2_1, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_0_V2_1)).toEqual(
         '0x00000000000000000000000000000000000000018000000000000000000000000000000000000000000002'
       )
     })
 
-    it('packs them for exact output single hop', () => {
-      expect(encodeMixedRouteToPath(route_0_V2_1, true)).toEqual(
-        '0x00000000000000000000000000000000000000028000000000000000000000000000000000000000000001'
-      )
-    })
-
     it('packs them correctly for multihop exact input', () => {
-      expect(encodeMixedRouteToPath(route_0_V2_1_V2_2, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_0_V2_1_V2_2)).toEqual(
         '0x000000000000000000000000000000000000000180000000000000000000000000000000000000000000028000000000000000000000000000000000000000000003'
       )
     })
 
-    it('packs them correctly for multihop exact output', () => {
-      expect(encodeMixedRouteToPath(route_0_V2_1_V2_2, true)).toEqual(
-        '0x000000000000000000000000000000000000000380000000000000000000000000000000000000000000028000000000000000000000000000000000000000000001'
-      )
-    })
-
     it('wraps ether input for exact input single hop', () => {
-      expect(encodeMixedRouteToPath(route_weth_V2_0, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_weth_V2_0)).toEqual(
         '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc28000000000000000000000000000000000000000000001'
       )
     })
-    it('wraps ether input for exact output single hop', () => {
-      expect(encodeMixedRouteToPath(route_weth_V2_0, true)).toEqual(
-        '0x0000000000000000000000000000000000000001800000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
-      )
-    })
+
     it('wraps ether input for exact input multihop', () => {
-      expect(encodeMixedRouteToPath(route_weth_V2_0_V2_1, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_weth_V2_0_V2_1)).toEqual(
         '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc280000000000000000000000000000000000000000000018000000000000000000000000000000000000000000002'
-      )
-    })
-    it('wraps ether input for exact output multihop', () => {
-      expect(encodeMixedRouteToPath(route_weth_V2_0_V2_1, true)).toEqual(
-        '0x00000000000000000000000000000000000000028000000000000000000000000000000000000000000001800000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
       )
     })
 
     it('wraps ether output for exact input single hop', () => {
-      expect(encodeMixedRouteToPath(route_0_V2_weth, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_0_V2_weth)).toEqual(
         '0x0000000000000000000000000000000000000001800000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
       )
     })
-    it('wraps ether output for exact output single hop', () => {
-      expect(encodeMixedRouteToPath(route_0_V2_weth, true)).toEqual(
-        '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc28000000000000000000000000000000000000000000001'
-      )
-    })
+
     it('wraps ether output for exact input multihop', () => {
-      expect(encodeMixedRouteToPath(route_0_V2_1_V2_weth, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_0_V2_1_V2_weth)).toEqual(
         '0x00000000000000000000000000000000000000018000000000000000000000000000000000000000000002800000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
-      )
-    })
-    it('wraps ether output for exact output multihop', () => {
-      expect(encodeMixedRouteToPath(route_0_V2_1_V2_weth, true)).toEqual(
-        '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc280000000000000000000000000000000000000000000028000000000000000000000000000000000000000000001'
       )
     })
   })
 
   describe('mixed route', () => {
     it('packs them for exact input v3 -> v2 with wrapped ether output', () => {
-      expect(encodeMixedRouteToPath(route_0_V3_1_V2_weth, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_0_V3_1_V2_weth)).toEqual(
         '0x0000000000000000000000000000000000000001000bb80000000000000000000000000000000000000002800000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
       )
     })
 
-    it('packs them for exact output v3 -> v2 with wrapped ether output', () => {
-      expect(encodeMixedRouteToPath(route_0_V3_1_V2_weth, true)).toEqual(
-        '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc28000000000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001'
-      )
-    })
-
     it('packs them for exact input v3 -> v2 -> v2', () => {
-      expect(encodeMixedRouteToPath(route_0_V3_weth_V2_1_V2_2, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_0_V3_weth_V2_1_V2_2)).toEqual(
         '0x0000000000000000000000000000000000000001000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc280000000000000000000000000000000000000000000028000000000000000000000000000000000000000000003'
       )
     })
 
-    it('packs them for exact output v3 -> v2 -> v2', () => {
-      expect(encodeMixedRouteToPath(route_0_V3_weth_V2_1_V2_2, true)).toEqual(
-        '0x00000000000000000000000000000000000000038000000000000000000000000000000000000000000002800000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000001'
-      )
-    })
-
     it('packs them for exact input v3 -> v3 -> v2', () => {
-      expect(encodeMixedRouteToPath(route_0_V3_1_v3_weth_V2_2, false)).toEqual(
+      expect(encodeMixedRouteToPath(route_0_V3_1_v3_weth_V2_2)).toEqual(
         '0x0000000000000000000000000000000000000001000bb80000000000000000000000000000000000000002000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc28000000000000000000000000000000000000000000003'
-      )
-    })
-
-    it('packs them for exact output v3 -> v3 -> v2', () => {
-      expect(encodeMixedRouteToPath(route_0_V3_1_v3_weth_V2_2, true)).toEqual(
-        '0x0000000000000000000000000000000000000003800000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000bb80000000000000000000000000000000000000002000bb80000000000000000000000000000000000000001'
       )
     })
   })
