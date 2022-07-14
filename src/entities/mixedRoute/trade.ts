@@ -1,6 +1,6 @@
 import { Currency, Fraction, Percent, Price, sortedInsert, CurrencyAmount, TradeType, Token } from '@uniswap/sdk-core'
 import { Pair } from '@uniswap/v2-sdk'
-import { Pool } from '@uniswap/v3-sdk'
+import { BestTradeOptions, Pool } from '@uniswap/v3-sdk'
 import invariant from 'tiny-invariant'
 import { ONE, ZERO } from '../../constants'
 import { MixedRouteSDK } from './route'
@@ -42,13 +42,6 @@ export function tradeComparator<TInput extends Currency, TOutput extends Currenc
       return -1
     }
   }
-}
-
-export interface BestTradeOptions {
-  // how many results to return
-  maxNumResults?: number
-  // the maximum number of hops a trade should contain
-  maxHops?: number
 }
 
 /**
@@ -518,8 +511,4 @@ export class MixedRouteTrade<TInput extends Currency, TOutput extends Currency, 
 
     return bestTrades
   }
-
-  /**
-   * We do not support exact out trades for MixedRoutes
-   */
 }
