@@ -10,16 +10,19 @@ describe('MixedRoute', () => {
   const token0 = new Token(1, '0x0000000000000000000000000000000000000001', 18, 't0')
   const token1 = new Token(1, '0x0000000000000000000000000000000000000002', 18, 't1')
   const token2 = new Token(1, '0x0000000000000000000000000000000000000003', 18, 't2')
+  const token3 = new Token(1, '0x0000000000000000000000000000000000000004', 18, 't3')
   const weth = WETH9[1]
 
   const pool_0_1 = new Pool(token0, token1, FeeAmount.MEDIUM, encodeSqrtRatioX96(1, 1), 0, 0, [])
   const pool_0_weth = new Pool(token0, weth, FeeAmount.MEDIUM, encodeSqrtRatioX96(1, 1), 0, 0, [])
   const pool_1_weth = new Pool(token1, weth, FeeAmount.MEDIUM, encodeSqrtRatioX96(1, 1), 0, 0, [])
+  const pool_2_weth = new Pool(token2, weth, FeeAmount.MEDIUM, encodeSqrtRatioX96(1, 1), 0, 0, [])
   /// @dev copied from v2-sdk route.test.ts
   const pair_0_1 = new Pair(CurrencyAmount.fromRawAmount(token0, '100'), CurrencyAmount.fromRawAmount(token1, '200'))
   const pair_0_weth = new Pair(CurrencyAmount.fromRawAmount(token0, '100'), CurrencyAmount.fromRawAmount(weth, '100'))
   const pair_1_weth = new Pair(CurrencyAmount.fromRawAmount(token1, '175'), CurrencyAmount.fromRawAmount(weth, '100'))
   const pair_weth_2 = new Pair(CurrencyAmount.fromRawAmount(weth, '200'), CurrencyAmount.fromRawAmount(token2, '150'))
+  const pair_2_3 = new Pair(CurrencyAmount.fromRawAmount(token2, '100'), CurrencyAmount.fromRawAmount(token3, '200'))
 
   describe('path', () => {
     it('wraps pure v3 route object and successfully constructs a path from the tokens', () => {
@@ -57,6 +60,24 @@ describe('MixedRoute', () => {
       expect(route.path).toEqual([token0, token1, weth, token2])
       expect(route.input).toEqual(token0)
       expect(route.output).toEqual(token2)
+      expect(route.chainId).toEqual(1)
+    })
+
+    it('wraps complex mixed route object with multihop same protocol in the beginning and constructs a path', () => {
+      const route = new MixedRouteSDK([pool_0_1, pool_1_weth, pair_weth_2], token0, token2)
+      expect(route.pools).toEqual([pool_0_1, pool_1_weth, pair_weth_2])
+      expect(route.path).toEqual([token0, token1, weth, token2])
+      expect(route.input).toEqual(token0)
+      expect(route.output).toEqual(token2)
+      expect(route.chainId).toEqual(1)
+    })
+
+    it('wraps complex mixed route object with consecutive in the middle and constructs a path', () => {
+      const route = new MixedRouteSDK([pair_0_1, pool_1_weth, pool_2_weth, pair_2_3], token0, token3)
+      expect(route.pools).toEqual([pair_0_1, pool_1_weth, pool_2_weth, pair_2_3])
+      expect(route.path).toEqual([token0, token1, weth, token2, token3])
+      expect(route.input).toEqual(token0)
+      expect(route.output).toEqual(token3)
       expect(route.chainId).toEqual(1)
     })
   })
