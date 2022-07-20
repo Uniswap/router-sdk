@@ -3,8 +3,6 @@ import invariant from 'tiny-invariant'
 import { Currency, Price, Token } from '@uniswap/sdk-core'
 import { Pool } from '@uniswap/v3-sdk'
 import { Pair } from '@uniswap/v2-sdk'
-import { IRoute } from '../route'
-import { Protocol } from '../protocol'
 
 type TPool = Pair | Pool
 
@@ -13,10 +11,7 @@ type TPool = Pair | Pool
  * @template TInput The input token
  * @template TOutput The output token
  */
-export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency>
-  implements IRoute<Currency, Currency, Pool | Pair>
-{
-  public readonly protocol: Protocol = Protocol.MIXED
+export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
   public readonly pools: TPool[]
   public readonly path: Token[]
   public readonly input: TInput
