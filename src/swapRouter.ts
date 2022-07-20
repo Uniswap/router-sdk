@@ -296,13 +296,6 @@ export abstract class SwapRouter {
           /// Now, we get output of this section
           outputToken = getOutputOfSection(section, outputToken)
 
-          console.log(
-            'Creating new MixedRouteSDK from section with input and output: ',
-            section.map((pool) => [pool.token0.symbol, pool.token1.symbol]),
-            section[0].token0.equals(nextInput) ? section[0].token0 : section[0].token1,
-            outputToken
-          )
-
           const newRouteOriginal = new MixedRouteSDK(
             [...section],
             section[0].token0.equals(nextInput) ? section[0].token0 : section[0].token1,
