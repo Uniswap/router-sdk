@@ -1,7 +1,7 @@
 import { Interface } from '@ethersproject/abi'
 import { Currency, CurrencyAmount, Percent, Token, TradeType, validateAndParseAddress, WETH9 } from '@uniswap/sdk-core'
 import { abi } from '@uniswap/swap-router-contracts/artifacts/contracts/interfaces/ISwapRouter02.sol/ISwapRouter02.json'
-import { Pair, Trade as V2Trade } from '@uniswap/v2-sdk'
+import { Pair, Trade as V2Trade, Route as V2Route } from '@uniswap/v2-sdk'
 import {
   encodeRouteToPath,
   FeeOptions,
@@ -13,6 +13,7 @@ import {
   SelfPermit,
   toHex,
   Trade as V3Trade,
+  Route as V3Route,
 } from '@uniswap/v3-sdk'
 import invariant from 'tiny-invariant'
 import JSBI from 'jsbi'
@@ -215,18 +216,25 @@ export abstract class SwapRouter {
       if (singleHop) {
         // For single hop, since it isn't really a mixedRoute, we'll just mimic behavior of V3 or V2
         if (route.pools.every((pool) => pool instanceof Pool)) {
-          /// it's guaranteed that the MixedRouteTrade here is compatible with V3Trade
-          return this.encodeV3Swap(
-            trade as unknown as V3Trade<Currency, Currency, TradeType>,
-            options,
-            routerMustCustody,
-            performAggregatedSlippageCheck
-          )
+          /// swaps[...].route.path will now be undefined from the type cast
+          let v3CastedTrade = trade as unknown as V3Trade<Currency, Currency, TradeType>
+
+          /// Since V3Routes have the tokenPath attribute we need to replace the path field with that
+          v3CastedTrade.swaps.forEach((swap) => {
+            if (swap.route === (route as unknown as V3Route<Currency, Currency>)) {
+              swap.route = new V3Route(route.pools as Pool[], route.input, route.output)
+            }
+          })
+          return this.encodeV3Swap(v3CastedTrade, options, routerMustCustody, performAggregatedSlippageCheck)
         } else {
           return [
             ...calldatas,
             this.encodeV2Swap(
-              trade as unknown as V2Trade<Currency, Currency, TradeType>,
+              V2Trade.exactIn(
+                new V2Route(route.pools as Pair[], route.input, route.output) as V2Route<Currency, Currency>,
+                inputAmount
+              ),
+              // trade as V2Trade<Currency, Currency, TradeType>,
               options,
               routerMustCustody,
               performAggregatedSlippageCheck
