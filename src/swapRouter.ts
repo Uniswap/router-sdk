@@ -285,13 +285,21 @@ export abstract class SwapRouter {
 
           const section = acc[i]
 
+          /// Previous output is now input, save this before reassigning
+          let nextInput = outputToken
+          /// Now, we get output of this section
           outputToken = getOutputOfSection(section, outputToken)
+
+          console.log(
+            'Creating new MixedRouteSDK from section with input and output: ',
+            section.map((pool) => [pool.token0.symbol, pool.token1.symbol]),
+            section[0].token0.equals(nextInput) ? section[0].token0 : section[0].token1,
+            outputToken
+          )
 
           const newRouteOriginal = new MixedRouteSDK(
             [...section],
-            /// since outputs become inputs, we have to add the special case for the first section
-            /// to use the original input before it is reassigned
-            i == 0 ? firstInputToken : section[0].token0.equals(outputToken) ? section[0].token1 : section[0].token0,
+            section[0].token0.equals(nextInput) ? section[0].token0 : section[0].token1,
             outputToken
           )
           const newRoute = new MixedRoute(newRouteOriginal)
