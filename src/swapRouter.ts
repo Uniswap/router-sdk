@@ -214,32 +214,31 @@ export abstract class SwapRouter {
       }
 
       if (singleHop) {
+        const recipient = routerMustCustody
+          ? ADDRESS_THIS
+          : typeof options.recipient === 'undefined'
+          ? MSG_SENDER
+          : validateAndParseAddress(options.recipient)
+
         // For single hop, since it isn't really a mixedRoute, we'll just mimic behavior of V3 or V2
         if (route.pools.every((pool) => pool instanceof Pool)) {
-          /// swaps[...].route.path will now be undefined from the type cast
-          let v3CastedTrade = trade as unknown as V3Trade<Currency, Currency, TradeType>
+          const exactInputSingleParams = {
+            tokenIn: route.path[0].address,
+            tokenOut: route.path[1].address,
+            fee: (route.pools as Pool[])[0].fee,
+            recipient,
+            amountIn,
+            amountOutMinimum: performAggregatedSlippageCheck ? 0 : amountOut,
+            sqrtPriceLimitX96: 0,
+          }
 
-          /// Since V3Routes have the tokenPath attribute we need to replace the path field with that
-          v3CastedTrade.swaps.forEach((swap) => {
-            if (swap.route === (route as unknown as V3Route<Currency, Currency>)) {
-              swap.route = new V3Route(route.pools as Pool[], route.input, route.output)
-            }
-          })
-          return this.encodeV3Swap(v3CastedTrade, options, routerMustCustody, performAggregatedSlippageCheck)
+          calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactInputSingle', [exactInputSingleParams]))
         } else {
-          return [
-            ...calldatas,
-            this.encodeV2Swap(
-              V2Trade.exactIn(
-                new V2Route(route.pools as Pair[], route.input, route.output) as V2Route<Currency, Currency>,
-                inputAmount
-              ),
-              // trade as V2Trade<Currency, Currency, TradeType>,
-              options,
-              routerMustCustody,
-              performAggregatedSlippageCheck
-            ),
-          ]
+          const path = trade.route.path.map((token) => token.address)
+
+          const exactInputParams = [amountIn, performAggregatedSlippageCheck ? 0 : amountOut, path, recipient]
+
+          calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactTokensForTokens', exactInputParams))
         }
       } else {
         let acc = []
