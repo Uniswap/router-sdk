@@ -3,6 +3,8 @@ import invariant from 'tiny-invariant'
 import { Currency, Price, Token } from '@uniswap/sdk-core'
 import { Pool } from '@uniswap/v3-sdk'
 import { Pair } from '@uniswap/v2-sdk'
+import { IRoute } from '../route'
+import { Protocol } from '../protocol'
 
 type TPool = Pair | Pool
 
@@ -11,7 +13,10 @@ type TPool = Pair | Pool
  * @template TInput The input token
  * @template TOutput The output token
  */
-export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
+export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency>
+  implements IRoute<Currency, Currency, Pool | Pair>
+{
+  public readonly protocol: Protocol = Protocol.MIXED
   public readonly pools: TPool[]
   public readonly path: Token[]
   public readonly input: TInput
@@ -64,38 +69,26 @@ export class MixedRouteSDK<TInput extends Currency, TOutput extends Currency> {
   public get midPrice(): Price<TInput, TOutput> {
     if (this._midPrice !== null) return this._midPrice
 
-    const getPriceForPool = (pool: TPool, nextInputIsToken0: boolean) => {
-      if (pool instanceof Pair) {
-        return nextInputIsToken0
-          ? new Price(pool.reserve0.currency, pool.reserve1.currency, pool.reserve0.quotient, pool.reserve1.quotient)
-          : new Price(pool.reserve1.currency, pool.reserve0.currency, pool.reserve1.quotient, pool.reserve0.quotient)
-      } else if (pool instanceof Pool) {
-        return nextInputIsToken0 ? pool.token0Price : pool.token1Price
-      } else {
-        throw new Error('Invalid pool type in mixed route')
-      }
-    }
-
     const price = this.pools.slice(1).reduce(
       ({ nextInput, price }, pool) => {
         return nextInput.equals(pool.token0)
           ? {
               nextInput: pool.token1,
-              price: price.multiply(getPriceForPool(pool, true)),
+              price: price.multiply(pool.token0Price),
             }
           : {
               nextInput: pool.token0,
-              price: price.multiply(getPriceForPool(pool, false)),
+              price: price.multiply(pool.token1Price),
             }
       },
       this.pools[0].token0.equals(this.input.wrapped)
         ? {
             nextInput: this.pools[0].token1,
-            price: getPriceForPool(this.pools[0], true),
+            price: this.pools[0].token0Price,
           }
         : {
             nextInput: this.pools[0].token0,
-            price: getPriceForPool(this.pools[0], false),
+            price: this.pools[0].token1Price,
           }
     ).price
 

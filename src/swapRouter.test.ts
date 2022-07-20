@@ -267,6 +267,7 @@ describe('SwapRouter', () => {
     })
 
     describe('Mixed Route', () => {
+      /// TODO: add many more tests here for different types of complex mixedRoutes
       describe('single-hop exact input (v2 + v3) backwards compatible', () => {
         describe('different trade configurations result in identical calldata', () => {
           const expectedCalldata =
@@ -275,8 +276,18 @@ describe('SwapRouter', () => {
 
           const v2Trade = V2Trade.exactIn(new V2Route([pair_0_1], token0, token1), amountIn)
           const v3Trade = V3Trade.fromRoute(new V3Route([pool_0_1], token0, token1), amountIn, TradeType.EXACT_INPUT)
+          const mixedRouteTrade1 = MixedRouteTrade.fromRoute(
+            new MixedRouteSDK([pair_0_1], token0, token1),
+            amountIn,
+            TradeType.EXACT_INPUT
+          )
+          const mixedRouteTrade2 = MixedRouteTrade.fromRoute(
+            new MixedRouteSDK([pool_0_1], token0, token1),
+            amountIn,
+            TradeType.EXACT_INPUT
+          )
 
-          it('array of trades', async () => {
+          it('generates the same calldata', async () => {
             const trades = [v2Trade, await v3Trade]
             const { calldata, value } = SwapRouter.swapCallParameters(trades, {
               slippageTolerance,
@@ -285,6 +296,18 @@ describe('SwapRouter', () => {
             })
             expect(calldata).toEqual(expectedCalldata)
             expect(value).toBe('0x00')
+
+            const mixedRouteTrades = [await mixedRouteTrade1, await mixedRouteTrade2]
+            const { calldata: mixedRouteCalldata, value: mixedRouteValue } = SwapRouter.swapCallParameters(
+              mixedRouteTrades,
+              {
+                slippageTolerance,
+                recipient,
+                deadlineOrPreviousBlockhash: deadline,
+              }
+            )
+            expect(mixedRouteCalldata).toEqual(expectedCalldata)
+            expect(mixedRouteValue).toBe('0x00')
           })
 
           it('meta-trade', async () => {
@@ -311,6 +334,28 @@ describe('SwapRouter', () => {
             })
             expect(calldata).toEqual(expectedCalldata)
             expect(value).toBe('0x00')
+
+            const mixedRouteTrades = await Trade.fromRoutes([], [], TradeType.EXACT_INPUT, [
+              {
+                mixedRoute: (await mixedRouteTrade1).swaps[0].route,
+                amount: amountIn,
+              },
+              {
+                mixedRoute: (await mixedRouteTrade2).swaps[0].route,
+                amount: amountIn,
+              },
+            ])
+
+            const { calldata: mixedRouteCalldata, value: mixedRouteValue } = SwapRouter.swapCallParameters(
+              mixedRouteTrades,
+              {
+                slippageTolerance,
+                recipient,
+                deadlineOrPreviousBlockhash: deadline,
+              }
+            )
+            expect(mixedRouteCalldata).toEqual(expectedCalldata)
+            expect(mixedRouteValue).toBe('0x00')
           })
         })
       })
