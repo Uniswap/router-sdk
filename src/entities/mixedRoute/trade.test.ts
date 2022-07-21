@@ -129,11 +129,21 @@ describe('MixedRouteTrade', () => {
         expect(trade.inputAmount.currency).toEqual(token0)
         expect(trade.outputAmount.currency).toEqual(ETHER)
       })
+
+      it('throws regardless for exact output', async () => {
+        await expect(
+          MixedRouteTrade.fromRoute(
+            new MixedRouteSDK([pool_weth_0], ETHER, token0),
+            CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(10000)),
+            TradeType.EXACT_OUTPUT
+          )
+        ).rejects.toThrow('TRADE_TYPE')
+      })
     })
 
     describe('#fromRoutes', () => {
       it('can be constructed with ETHER as input with multiple routes', async () => {
-        const trade = await MixedRouteTrade.fromRoutes<Ether, Token, TradeType.EXACT_INPUT>(
+        const trade = await MixedRouteTrade.fromRoutes<Ether, Token, TradeType>(
           [
             {
               amount: CurrencyAmount.fromRawAmount(Ether.onChain(1), JSBI.BigInt(10000)),
@@ -147,7 +157,7 @@ describe('MixedRouteTrade', () => {
       })
 
       it('can be constructed with ETHER as output for exact input with multiple routes', async () => {
-        const trade = await MixedRouteTrade.fromRoutes<Token, Ether, TradeType.EXACT_INPUT>(
+        const trade = await MixedRouteTrade.fromRoutes<Token, Ether, TradeType>(
           [
             {
               amount: CurrencyAmount.fromRawAmount(token0, JSBI.BigInt(3000)),
@@ -181,6 +191,20 @@ describe('MixedRouteTrade', () => {
           )
         ).rejects.toThrow('POOLS_DUPLICATED')
       })
+
+      it('throws if created with exact output', async () => {
+        await expect(
+          MixedRouteTrade.fromRoutes<Ether, Token, TradeType>(
+            [
+              {
+                amount: CurrencyAmount.fromRawAmount(Ether.onChain(1), JSBI.BigInt(10000)),
+                route: new MixedRouteSDK([pool_weth_0], ETHER, token0),
+              },
+            ],
+            TradeType.EXACT_OUTPUT
+          )
+        ).rejects.toThrow('TRADE_TYPE')
+      })
     })
 
     describe('#createUncheckedTrade', () => {
@@ -203,6 +227,19 @@ describe('MixedRouteTrade', () => {
             tradeType: TradeType.EXACT_INPUT,
           })
         ).toThrow('OUTPUT_CURRENCY_MATCH')
+      })
+      it('throws if tradeType is exactOutput', () => {
+        try {
+          MixedRouteTrade.createUncheckedTrade({
+            route: new MixedRouteSDK([pool_0_1], token1, token0),
+            inputAmount: CurrencyAmount.fromRawAmount(token1, 10000),
+            outputAmount: CurrencyAmount.fromRawAmount(token0, 100000),
+            tradeType: TradeType.EXACT_OUTPUT,
+          })
+        } catch (err) {
+          // @ts-ignore
+          expect(err.message).toEqual('Invariant failed: TRADE_TYPE')
+        }
       })
       it('can create an exact input trade without simulating', () => {
         MixedRouteTrade.createUncheckedTrade({
@@ -251,6 +288,29 @@ describe('MixedRouteTrade', () => {
             tradeType: TradeType.EXACT_INPUT,
           })
         ).toThrow('OUTPUT_CURRENCY_MATCH')
+      })
+
+      it('throws if tradeType is exact output', () => {
+        try {
+          MixedRouteTrade.createUncheckedTradeWithMultipleRoutes({
+            routes: [
+              {
+                route: new MixedRouteSDK([pool_0_1], token0, token1),
+                inputAmount: CurrencyAmount.fromRawAmount(token0, 5000),
+                outputAmount: CurrencyAmount.fromRawAmount(token1, 50000),
+              },
+              {
+                route: new MixedRouteSDK([pool_0_2, pool_1_2], token0, token1),
+                inputAmount: CurrencyAmount.fromRawAmount(token0, 5000),
+                outputAmount: CurrencyAmount.fromRawAmount(token1, 50000),
+              },
+            ],
+            tradeType: TradeType.EXACT_OUTPUT,
+          })
+        } catch (err) {
+          // @ts-ignore
+          expect(err.message).toEqual('Invariant failed: TRADE_TYPE')
+        }
       })
 
       it('can create an exact input trade without simulating with multiple routes', () => {
@@ -839,7 +899,7 @@ describe('MixedRouteTrade', () => {
 
     describe('#fromRoutes', () => {
       it('can be constructed with ETHER as input with multiple routes', async () => {
-        const trade = await MixedRouteTrade.fromRoutes<Ether, Token, TradeType.EXACT_INPUT>(
+        const trade = await MixedRouteTrade.fromRoutes<Ether, Token, TradeType>(
           [
             {
               amount: CurrencyAmount.fromRawAmount(Ether.onChain(1), JSBI.BigInt(10000)),
