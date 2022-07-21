@@ -191,13 +191,12 @@ export abstract class SwapRouter {
   private static encodeMixedRouteSwap(
     trade: MixedRouteTrade<Currency, Currency, TradeType>,
     options: SwapOptions,
-    /// @dev these are not used in mixedRouteTrade calldata generation but passed to encodeV3Swap and encodeV2Swap in case of singleHop
     routerMustCustody: boolean,
     performAggregatedSlippageCheck: boolean
   ): string[] {
     const calldatas: string[] = []
 
-    invariant(trade.tradeType === TradeType.EXACT_INPUT, 'MixedRouteTrades must be exact input')
+    invariant(trade.tradeType === TradeType.EXACT_INPUT, 'TRADE_TYPE')
 
     for (const { route, inputAmount, outputAmount } of trade.swaps) {
       const amountIn: string = toHex(trade.maximumAmountIn(options.slippageTolerance, inputAmount).quotient)
@@ -206,19 +205,19 @@ export abstract class SwapRouter {
       // flag for whether the trade is single hop or not
       const singleHop = route.pools.length === 1
 
-      const recipient =
-        typeof options.recipient === 'undefined' ? MSG_SENDER : validateAndParseAddress(options.recipient)
+      // const recipient =
+      //   typeof options.recipient === 'undefined' ? MSG_SENDER : validateAndParseAddress(options.recipient)
+      const recipient = routerMustCustody
+        ? ADDRESS_THIS
+        : typeof options.recipient === 'undefined'
+        ? MSG_SENDER
+        : validateAndParseAddress(options.recipient)
+
       const mixedRouteIsAllV3 = (route: MixedRoute<Currency, Currency>) => {
         return route.pools.every((pool) => pool instanceof Pool)
       }
 
       if (singleHop) {
-        const recipient = routerMustCustody
-          ? ADDRESS_THIS
-          : typeof options.recipient === 'undefined'
-          ? MSG_SENDER
-          : validateAndParseAddress(options.recipient)
-
         // For single hop, since it isn't really a mixedRoute, we'll just mimic behavior of V3 or V2
         if (route.pools.every((pool) => pool instanceof Pool)) {
           const exactInputSingleParams = {
@@ -307,6 +306,7 @@ export abstract class SwapRouter {
           if (mixedRouteIsAllV3(newRoute)) {
             const exactInputParams = {
               path,
+              /// routerMustCustody is prioritized
               recipient: isLastSectionInRoute(i) ? recipient : ADDRESS_THIS,
               amountIn: i == 0 ? amountIn : 0,
               amountOutMinimum: !isLastSectionInRoute(i) ? 0 : amountOut,
