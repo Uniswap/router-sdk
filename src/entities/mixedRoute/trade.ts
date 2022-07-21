@@ -52,6 +52,7 @@ export function tradeComparator<TInput extends Currency, TOutput extends Currenc
  *
  * Does not account for slippage, i.e., changes in price environment that can occur between
  * the time the trade is submitted and when it is executed.
+ * @notice This class is functionally the same as the `Trade` class in the `@uniswap/v3-sdk` package, aside from typing and some input validation.
  * @template TInput The input token, either Ether or an ERC-20
  * @template TOutput The output token, either Ether or an ERC-20
  * @template TTradeType The trade type, either exact input or exact output
