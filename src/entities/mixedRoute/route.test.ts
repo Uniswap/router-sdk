@@ -392,15 +392,16 @@ describe('MixedRoute', () => {
         expect(route.midPrice.toFixed(4)).toEqual('3.7500')
       })
 
-      xit('correct for 0 -[V2]-> 1 -[V2]-> weth -[V3]-> 2', () => {
+      it('correct for 0 -[V2]-> 1 -[V2]-> weth -[V3]-> 2', () => {
         const route = new MixedRouteSDK([pair_0_1, pair_1_weth, pool_2_weth], token0, token2)
         /**
          * pair_0_1 midPrice = 200 / 100 = 2
-         * nextInput = 1 -> pair_1_weth midPrice =
-         *
+         * nextInput = 1 -> pair_1_weth midPrice = 100 / 175 = 0.5714
+         * nextInput = weth -> pool_2_weth midPrice = is 1 -> 0 so 8/1 = 8
+         * so midPoint = 2 * 0.5714 * 8 = 9.1429
          */
 
-        expect(route.midPrice.toFixed(4)).toEqual('0.4375')
+        expect(route.midPrice.toFixed(4)).toEqual('9.1429')
       })
     })
   })
