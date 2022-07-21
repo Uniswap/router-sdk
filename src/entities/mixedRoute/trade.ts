@@ -211,7 +211,7 @@ export class MixedRouteTrade<TInput extends Currency, TOutput extends Currency, 
     let inputAmount: CurrencyAmount<TInput>
     let outputAmount: CurrencyAmount<TOutput>
 
-    invariant(tradeType === TradeType.EXACT_INPUT, 'MixedRouteTrade.fromRoute: tradeType must be EXACT_INPUT')
+    invariant(tradeType === TradeType.EXACT_INPUT, 'TRADE_TYPE')
 
     invariant(amount.currency.equals(route.input), 'INPUT')
     amounts[0] = amount.wrapped
@@ -256,7 +256,7 @@ export class MixedRouteTrade<TInput extends Currency, TOutput extends Currency, 
       outputAmount: CurrencyAmount<TOutput>
     }[] = []
 
-    invariant(tradeType === TradeType.EXACT_INPUT, 'MixedRouteTrade.fromRoutes: tradeType must be EXACT_INPUT')
+    invariant(tradeType === TradeType.EXACT_INPUT, 'TRADE_TYPE')
 
     for (const { route, amount } of routes) {
       const amounts: CurrencyAmount<Token>[] = new Array(route.path.length)
@@ -382,7 +382,7 @@ export class MixedRouteTrade<TInput extends Currency, TOutput extends Currency, 
 
     invariant(numPools == poolAddressSet.size, 'POOLS_DUPLICATED')
 
-    invariant(tradeType === TradeType.EXACT_INPUT, 'MixedRouteTrade.constructor: tradeType must be EXACT_INPUT')
+    invariant(tradeType === TradeType.EXACT_INPUT, 'TRADE_TYPE')
 
     this.swaps = routes
     this.tradeType = tradeType
