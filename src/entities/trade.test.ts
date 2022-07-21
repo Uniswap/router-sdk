@@ -748,6 +748,22 @@ describe('Trade', () => {
         ])
       ).rejects.toThrow('OUTPUT_CURRENCY_MATCH')
     })
+
+    it('throws if trade is created with EXACT_OUTPUT and contains mixedRoutes', async () => {
+      const routeOriginalV2 = new V2RouteSDK([pair_weth_0, pair_0_1], ETHER, token1)
+      const routev2 = new RouteV2(routeOriginalV2)
+      const amountv2 = CurrencyAmount.fromRawAmount(token1, JSBI.BigInt(100))
+
+      const mixedRouteOriginal = new MixedRouteSDK([pool_weth_0, pool_0_1], ETHER, token1)
+      const mixedRoute = new MixedRoute(mixedRouteOriginal)
+      const mixedRouteAmount = CurrencyAmount.fromRawAmount(token1, JSBI.BigInt(1000))
+
+      await expect(
+        Trade.fromRoutes([{ routev2, amount: amountv2 }], [], TradeType.EXACT_OUTPUT, [
+          { mixedRoute, amount: mixedRouteAmount },
+        ])
+      ).rejects.toThrow('TRADE_TYPE')
+    })
   })
 
   describe('#worstExecutionPrice', () => {

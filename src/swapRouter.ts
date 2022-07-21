@@ -205,8 +205,6 @@ export abstract class SwapRouter {
       // flag for whether the trade is single hop or not
       const singleHop = route.pools.length === 1
 
-      // const recipient =
-      //   typeof options.recipient === 'undefined' ? MSG_SENDER : validateAndParseAddress(options.recipient)
       const recipient = routerMustCustody
         ? ADDRESS_THIS
         : typeof options.recipient === 'undefined'
@@ -218,7 +216,8 @@ export abstract class SwapRouter {
       }
 
       if (singleHop) {
-        // For single hop, since it isn't really a mixedRoute, we'll just mimic behavior of V3 or V2
+        /// For single hop, since it isn't really a mixedRoute, we'll just mimic behavior of V3 or V2
+        /// We don't use encodeV3Swap or encodeV2Swap because casting the trade to a V3Trade or V2Trade is overcomplicated
         if (route.pools.every((pool) => pool instanceof Pool)) {
           const exactInputSingleParams = {
             tokenIn: route.path[0].address,
