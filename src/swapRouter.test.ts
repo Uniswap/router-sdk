@@ -442,7 +442,6 @@ describe('SwapRouter', () => {
       })
     })
 
-    /// TODO: add MixedRoute to exact input tests here
     describe('ETH input', () => {
       describe('single-hop exact input (v2 + v3)', () => {
         describe('different trade configurations result in identical calldata', () => {

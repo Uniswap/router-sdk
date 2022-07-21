@@ -375,7 +375,6 @@ export abstract class SwapRouter {
     }
 
     const numberOfTrades = trades.reduce(
-      // TODO: is this math right for mixedRouteTrade?
       (numberOfTrades, trade) =>
         numberOfTrades + (trade instanceof V3Trade || trade instanceof MixedRouteTrade ? trade.swaps.length : 1),
       0
