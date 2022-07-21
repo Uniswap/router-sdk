@@ -178,21 +178,6 @@ export class MixedRouteTrade<TInput extends Currency, TOutput extends Currency, 
   }
 
   /**
-   * Constructs an exact in trade with the given amount in and route
-   * @template TInput The input token, either Ether or an ERC-20
-   * @template TOutput The output token, either Ether or an ERC-20
-   * @param route The route of the exact in trade
-   * @param amountIn The amount being passed in
-   * @returns The exact in trade
-   */
-  public static async exactIn<TInput extends Currency, TOutput extends Currency>(
-    route: MixedRouteSDK<TInput, TOutput>,
-    amountIn: CurrencyAmount<TInput>
-  ): Promise<MixedRouteTrade<TInput, TOutput, TradeType.EXACT_INPUT>> {
-    return MixedRouteTrade.fromRoute(route, amountIn, TradeType.EXACT_INPUT)
-  }
-
-  /**
    * Constructs a trade by simulating swaps through the given route
    * @template TInput The input token, either Ether or an ERC-20.
    * @template TOutput The output token, either Ether or an ERC-20.
