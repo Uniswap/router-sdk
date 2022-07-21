@@ -1,7 +1,7 @@
 import { Interface } from '@ethersproject/abi'
-import { Currency, CurrencyAmount, Percent, Token, TradeType, validateAndParseAddress, WETH9 } from '@uniswap/sdk-core'
+import { Currency, CurrencyAmount, Percent, TradeType, validateAndParseAddress, WETH9 } from '@uniswap/sdk-core'
 import { abi } from '@uniswap/swap-router-contracts/artifacts/contracts/interfaces/ISwapRouter02.sol/ISwapRouter02.json'
-import { Pair, Trade as V2Trade } from '@uniswap/v2-sdk'
+import { Trade as V2Trade } from '@uniswap/v2-sdk'
 import {
   encodeRouteToPath,
   FeeOptions,
@@ -26,6 +26,7 @@ import { PaymentsExtended } from './paymentsExtended'
 import { MixedRouteTrade } from './entities/mixedRoute/trade'
 import { encodeMixedRouteToPath } from './utils/encodeMixedRouteToPath'
 import { MixedRouteSDK } from './entities/mixedRoute/route'
+import { divideMixedRouteIntoConsecutiveSections, getOutputOfPools } from './utils'
 
 const ZERO = JSBI.BigInt(0)
 
@@ -238,61 +239,22 @@ export abstract class SwapRouter {
           calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactTokensForTokens', exactInputParams))
         }
       } else {
-        let acc = []
-        let j = 0
-        while (j < route.pools.length) {
-          // seek forward until finding a pool of different type
-          let section = []
-          if (route.pools[j] instanceof Pool) {
-            while (route.pools[j] instanceof Pool) {
-              section.push(route.pools[j])
-              j++
-              if (j === route.pools.length) {
-                // we've reached the end of the route
-                break
-              }
-            }
-            acc.push(section)
-          } else {
-            while (route.pools[j] instanceof Pair) {
-              section.push(route.pools[j])
-              j++
-              if (j === route.pools.length) {
-                // we've reached the end of the route
-                break
-              }
-            }
-            acc.push(section)
-          }
-        }
+        const sections = divideMixedRouteIntoConsecutiveSections(route)
 
         const firstInputToken = route.input.wrapped
         let outputToken = firstInputToken
 
-        const getOutputOfSection = (section: (Pool | Pair)[], firstInputToken: Token) => {
-          const { inputToken } = section.reduce(
-            ({ inputToken }, pool: Pool | Pair): { inputToken: Token } => {
-              const outputToken: Token = pool.token0.equals(inputToken) ? pool.token1 : pool.token0
-              return {
-                inputToken: outputToken,
-              }
-            },
-            { inputToken: firstInputToken }
-          )
-          return inputToken
-        }
-
-        for (let i = 0; i < acc.length; i++) {
+        for (let i = 0; i < sections.length; i++) {
           const isLastSectionInRoute = (i: number) => {
-            return i === acc.length - 1
+            return i === sections.length - 1
           }
 
-          const section = acc[i]
+          const section = sections[i]
 
           /// Previous output is now input, save this before reassigning
           let nextInput = outputToken
           /// Now, we get output of this section
-          outputToken = getOutputOfSection(section, outputToken)
+          outputToken = getOutputOfPools(section, outputToken)
 
           const newRouteOriginal = new MixedRouteSDK(
             [...section],
@@ -313,12 +275,11 @@ export abstract class SwapRouter {
 
             calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactInput', [exactInputParams]))
           } else {
-            // Pair
             const exactInputParams = [
-              i == 0 ? amountIn : 0,
-              !isLastSectionInRoute(i) ? 0 : amountOut,
-              newRoute.path.map((token) => token.address), // this should be sorted via sdk
-              isLastSectionInRoute(i) ? recipient : ADDRESS_THIS,
+              i == 0 ? amountIn : 0, // amountIn
+              !isLastSectionInRoute(i) ? 0 : amountOut, // amountOutMin
+              newRoute.path.map((token) => token.address), // path
+              isLastSectionInRoute(i) ? recipient : ADDRESS_THIS, // to
             ]
 
             calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactTokensForTokens', exactInputParams))
