@@ -12,30 +12,22 @@ export const divideMixedRouteIntoConsecutiveSections = (
   route: MixedRouteSDK<Currency, Currency>
 ): (Pool | Pair)[][] => {
   let acc = []
-  let j = 0
-  while (j < route.pools.length) {
-    // seek forward until finding a pool of different type
-    let section = []
-    if (route.pools[j] instanceof Pool) {
-      while (route.pools[j] instanceof Pool) {
-        section.push(route.pools[j])
-        j++
-        if (j === route.pools.length) {
-          // we've reached the end of the route
-          break
-        }
-      }
-      acc.push(section)
-    } else {
-      while (route.pools[j] instanceof Pair) {
-        section.push(route.pools[j])
-        j++
-        if (j === route.pools.length) {
-          // we've reached the end of the route
-          break
-        }
-      }
-      acc.push(section)
+
+  let left = 0
+  let right = 0
+  while (right < route.pools.length) {
+    if (
+      (route.pools[left] instanceof Pool && route.pools[right] instanceof Pair) ||
+      (route.pools[left] instanceof Pair && route.pools[right] instanceof Pool)
+    ) {
+      acc.push(route.pools.slice(left, right))
+      left = right
+    }
+    // seek forward with right pointer
+    right++
+    if (right === route.pools.length) {
+      /// we reached the end, take the rest
+      acc.push(route.pools.slice(left, right))
     }
   }
   return acc

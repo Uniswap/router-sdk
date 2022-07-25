@@ -1,9 +1,10 @@
-import { Ether, Token, WETH9, CurrencyAmount } from '@uniswap/sdk-core'
+import { Ether, Token, WETH9, CurrencyAmount, Currency } from '@uniswap/sdk-core'
 import { Route as V3RouteSDK, Pool, FeeAmount, TickMath, encodeSqrtRatioX96 } from '@uniswap/v3-sdk'
 import { MixedRoute, RouteV3 } from '../route'
 import { Protocol } from '../protocol'
 import { Route as V2RouteSDK, Pair } from '@uniswap/v2-sdk'
 import { MixedRouteSDK } from './route'
+import { divideMixedRouteIntoConsecutiveSections } from '../../utils'
 
 describe('MixedRoute', () => {
   const ETHER = Ether.onChain(1)
@@ -403,6 +404,70 @@ describe('MixedRoute', () => {
 
         expect(route.midPrice.toFixed(4)).toEqual('9.1429')
       })
+    })
+  })
+
+  describe('divideMixedRouteIntoConsecutiveSections', () => {
+    it('returns correct for single pool', () => {
+      const route = new MixedRouteSDK([pool_0_1], token0, token1)
+      expect(divideMixedRouteIntoConsecutiveSections(route)).toStrictEqual([[pool_0_1]])
+    })
+    it('returns correct for single pool', () => {
+      const route = new MixedRouteSDK([pair_0_1], token0, token1)
+      expect(divideMixedRouteIntoConsecutiveSections(route)).toStrictEqual([[pair_0_1]])
+    })
+
+    it('returns correct for route of all the v3 pools', () => {
+      const route = new MixedRouteSDK([pool_0_1, pool_1_weth, pool_2_weth], token0, token2)
+      const result = divideMixedRouteIntoConsecutiveSections(route)
+      expect(result.length).toEqual(1)
+      expect(result[0].length).toEqual(3)
+      expect(result).toStrictEqual([[pool_0_1, pool_1_weth, pool_2_weth]])
+    })
+
+    it('consecutive pair in middle of two pools', () => {
+      const route: MixedRouteSDK<Currency, Currency> = new MixedRouteSDK(
+        [pool_0_1, pair_1_weth, pair_weth_2, pool_2_3],
+        token0,
+        token3
+      )
+      const result = divideMixedRouteIntoConsecutiveSections(route)
+      expect(result.length).toEqual(3)
+      expect(result[0][0]).toStrictEqual(pool_0_1)
+      expect(result[1].length).toEqual(2)
+      const referenceSecondPart = [pair_1_weth, pair_weth_2]
+      result[1].forEach((pair, index) => {
+        expect(pair).toStrictEqual(referenceSecondPart[index])
+      })
+      expect(result[2][0]).toStrictEqual(pool_2_3)
+    })
+    it('consecutive pair at the end', () => {
+      const route: MixedRouteSDK<Currency, Currency> = new MixedRouteSDK(
+        [pool_0_1, pair_1_weth, pair_weth_2, pair_2_3],
+        token0,
+        token3
+      )
+      const result = divideMixedRouteIntoConsecutiveSections(route)
+      expect(result.length).toEqual(2)
+      expect(result[0][0]).toStrictEqual(pool_0_1)
+      const referenceSecondPart = [pair_1_weth, pair_weth_2, pair_2_3]
+      result[1].forEach((pair, i) => {
+        expect(pair).toStrictEqual(referenceSecondPart[i])
+      })
+    })
+    it('consecutive pair at the beginning', () => {
+      const route: MixedRouteSDK<Currency, Currency> = new MixedRouteSDK(
+        [pair_0_1, pair_1_weth, pair_weth_2, pool_2_3],
+        token0,
+        token3
+      )
+      const result = divideMixedRouteIntoConsecutiveSections(route)
+      expect(result.length).toEqual(2)
+      const referenceFirstPart = [pair_0_1, pair_1_weth, pair_weth_2]
+      result[0].forEach((pair, i) => {
+        expect(pair).toStrictEqual(referenceFirstPart[i])
+      })
+      expect(result[1][0]).toStrictEqual(pool_2_3)
     })
   })
 })

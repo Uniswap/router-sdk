@@ -78,6 +78,14 @@ export abstract class SwapRouter {
    */
   private constructor() {}
 
+  /**
+   * @notice Generates the calldata for a Swap with a V2 Route.
+   * @param trade The V2Trade to encode.
+   * @param options SwapOptions to use for the trade.
+   * @param routerMustCustody Flag for whether funds should be sent to the router
+   * @param performAggregatedSlippageCheck Flag for whether we want to perform an aggregated slippage check
+   * @returns A string array of calldatas for the trade.
+   */
   private static encodeV2Swap(
     trade: V2Trade<Currency, Currency, TradeType>,
     options: SwapOptions,
@@ -105,6 +113,14 @@ export abstract class SwapRouter {
     }
   }
 
+  /**
+   * @notice Generates the calldata for a Swap with a V3 Route.
+   * @param trade The V3Trade to encode.
+   * @param options SwapOptions to use for the trade.
+   * @param routerMustCustody Flag for whether funds should be sent to the router
+   * @param performAggregatedSlippageCheck Flag for whether we want to perform an aggregated slippage check
+   * @returns A string array of calldatas for the trade.
+   */
   private static encodeV3Swap(
     trade: V3Trade<Currency, Currency, TradeType>,
     options: SwapOptions,
@@ -181,13 +197,13 @@ export abstract class SwapRouter {
   }
 
   /**
-   * @notice Generates the calldata for a MixedRouteSwap. Since MixedRoutes cannot be singleHops, we will instead generate
+   * @notice Generates the calldata for a MixedRouteSwap. Since single hop routes are not MixedRoutes, we will instead generate
    *         them via the existing encodeV3Swap and encodeV2Swap methods.
    * @param trade The MixedRouteTrade to encode.
-   * @param options
-   * @param routerMustCustody
-   * @param performAggregatedSlippageCheck
-   * @returns
+   * @param options SwapOptions to use for the trade.
+   * @param routerMustCustody Flag for whether funds should be sent to the router
+   * @param performAggregatedSlippageCheck Flag for whether we want to perform an aggregated slippage check
+   * @returns A string array of calldatas for the trade.
    */
   private static encodeMixedRouteSwap(
     trade: MixedRouteTrade<Currency, Currency, TradeType>,
@@ -212,14 +228,14 @@ export abstract class SwapRouter {
         ? MSG_SENDER
         : validateAndParseAddress(options.recipient)
 
-      const mixedRouteIsAllV3 = (route: MixedRoute<Currency, Currency>) => {
+      const mixedRouteIsAllV3 = (route: MixedRouteSDK<Currency, Currency>) => {
         return route.pools.every((pool) => pool instanceof Pool)
       }
 
       if (singleHop) {
         /// For single hop, since it isn't really a mixedRoute, we'll just mimic behavior of V3 or V2
-        /// We don't use encodeV3Swap or encodeV2Swap because casting the trade to a V3Trade or V2Trade is overcomplicated
-        if (route.pools.every((pool) => pool instanceof Pool)) {
+        /// We don't use encodeV3Swap() or encodeV2Swap() because casting the trade to a V3Trade or V2Trade is overcomplex
+        if (mixedRouteIsAllV3(route)) {
           const exactInputSingleParams = {
             tokenIn: route.path[0].address,
             tokenOut: route.path[1].address,
@@ -232,7 +248,7 @@ export abstract class SwapRouter {
 
           calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactInputSingle', [exactInputSingleParams]))
         } else {
-          const path = trade.route.path.map((token) => token.address)
+          const path = route.path.map((token) => token.address)
 
           const exactInputParams = [amountIn, performAggregatedSlippageCheck ? 0 : amountOut, path, recipient]
 
@@ -241,33 +257,35 @@ export abstract class SwapRouter {
       } else {
         const sections = divideMixedRouteIntoConsecutiveSections(route)
 
-        const firstInputToken = route.input.wrapped
-        let outputToken = firstInputToken
+        const isLastSectionInRoute = (i: number) => {
+          return i === sections.length - 1
+        }
+
+        let outputToken
+        let inputToken = route.input.wrapped
 
         for (let i = 0; i < sections.length; i++) {
-          const isLastSectionInRoute = (i: number) => {
-            return i === sections.length - 1
-          }
-
           const section = sections[i]
-
-          /// Previous output is now input, save this before reassigning
-          let nextInput = outputToken
           /// Now, we get output of this section
-          outputToken = getOutputOfPools(section, outputToken)
+          outputToken = getOutputOfPools(section, inputToken)
 
           const newRouteOriginal = new MixedRouteSDK(
             [...section],
-            section[0].token0.equals(nextInput) ? section[0].token0 : section[0].token1,
+            section[0].token0.equals(inputToken) ? section[0].token0 : section[0].token1,
             outputToken
           )
           const newRoute = new MixedRoute(newRouteOriginal)
           const path: string = encodeMixedRouteToPath(newRoute)
 
+          /// Previous output is now input
+          inputToken = outputToken
+
           if (mixedRouteIsAllV3(newRoute)) {
             const exactInputParams = {
               path,
-              /// routerMustCustody is prioritized
+              // By default router holds funds until the last swap, then it is sent to the recipient
+              // special case exists where we are unwrapping WETH output, in which case `routerMustCustody` is set to true
+              // and router still holds the funds. That logic bundled into how the value of `recipient` is calculated
               recipient: isLastSectionInRoute(i) ? recipient : ADDRESS_THIS,
               amountIn: i == 0 ? amountIn : 0,
               amountOutMinimum: !isLastSectionInRoute(i) ? 0 : amountOut,
