@@ -54,7 +54,6 @@ export interface SwapOptions {
    */
   fee?: FeeOptions
 
-
   /**
    * Option to refund ETH since tx must submit entire value, despite the risk of a partial fill.
    */
