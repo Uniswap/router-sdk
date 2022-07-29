@@ -360,7 +360,7 @@ export abstract class SwapRouter {
     }
 
     // must refund when paying in ETH but with an uncertain input amount OR if there's a chance of a partial fill
-    if ((inputIsNative && sampleTrade.tradeType === TradeType.EXACT_OUTPUT) || SwapRouter.riskOfPartialFill(trades)) {
+    if (inputIsNative && (sampleTrade.tradeType === TradeType.EXACT_OUTPUT || SwapRouter.riskOfPartialFill(trades))) {
       calldatas.push(Payments.encodeRefundETH())
     }
 
