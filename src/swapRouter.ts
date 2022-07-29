@@ -53,6 +53,12 @@ export interface SwapOptions {
    * Optional information for taking a fee on output.
    */
   fee?: FeeOptions
+
+
+  /**
+   * Option to refund ETH since tx must submit entire value, despite the risk of a partial fill.
+   */
+  refundETH?: boolean
 }
 
 export interface SwapAndAddOptions extends SwapOptions {
@@ -358,7 +364,7 @@ export abstract class SwapRouter {
     }
 
     // must refund when paying in ETH, but with an uncertain input amount
-    if (inputIsNative && sampleTrade.tradeType === TradeType.EXACT_OUTPUT) {
+    if (inputIsNative && (sampleTrade.tradeType === TradeType.EXACT_OUTPUT || options.refundETH)) {
       calldatas.push(Payments.encodeRefundETH())
     }
 
