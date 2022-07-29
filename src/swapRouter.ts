@@ -53,11 +53,6 @@ export interface SwapOptions {
    * Optional information for taking a fee on output.
    */
   fee?: FeeOptions
-
-  /**
-   * Option to refund ETH since tx must submit entire value, despite the risk of a partial fill.
-   */
-  refundETH?: boolean
 }
 
 export interface SwapAndAddOptions extends SwapOptions {
@@ -66,6 +61,12 @@ export interface SwapAndAddOptions extends SwapOptions {
    */
   outputTokenPermit?: PermitOptions
 }
+
+type AnyTradeType =
+  | Trade<Currency, Currency, TradeType>
+  | V2Trade<Currency, Currency, TradeType>
+  | V3Trade<Currency, Currency, TradeType>
+  | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[]
 
 /**
  * Represents the Uniswap V2 + V3 SwapRouter02, and has static methods for helping execute trades.
@@ -181,11 +182,7 @@ export abstract class SwapRouter {
   }
 
   private static encodeSwaps(
-    trades:
-      | Trade<Currency, Currency, TradeType>
-      | V2Trade<Currency, Currency, TradeType>
-      | V3Trade<Currency, Currency, TradeType>
-      | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[],
+    trades: AnyTradeType,
     options: SwapOptions,
     isSwapAndAdd?: boolean
   ): {
@@ -362,8 +359,9 @@ export abstract class SwapRouter {
       }
     }
 
-    // must refund when paying in ETH, but with an uncertain input amount
-    if (inputIsNative && (sampleTrade.tradeType === TradeType.EXACT_OUTPUT || options.refundETH)) {
+    // must refund when paying in ETH but with an uncertain input amount OR if there's a chance of a partial fill
+    if (
+      (inputIsNative && sampleTrade.tradeType === TradeType.EXACT_OUTPUT) || SwapRouter.riskOfPartialFill(trades)) {
       calldatas.push(Payments.encodeRefundETH())
     }
 
@@ -379,11 +377,7 @@ export abstract class SwapRouter {
    * @param options options for the call parameters
    */
   public static swapAndAddCallParameters(
-    trades:
-      | Trade<Currency, Currency, TradeType>
-      | V2Trade<Currency, Currency, TradeType>
-      | V3Trade<Currency, Currency, TradeType>
-      | (V2Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>)[],
+    trades: AnyTradeType,
     options: SwapAndAddOptions,
     position: Position,
     addLiquidityOptions: CondensedAddLiquidityOptions,
@@ -472,6 +466,22 @@ export abstract class SwapRouter {
       calldata: MulticallExtended.encodeMulticall(calldatas, options.deadlineOrPreviousBlockhash),
       value: value.toString(),
     }
+  }
+
+  // if slippage is very high, there's a chance of hitting max/min prices resulting in a partial fill of the swap
+  private static riskOfPartialFill(trades: AnyTradeType): boolean {
+    const FIFTY_PERCENT = new Percent(JSBI.BigInt(50), JSBI.BigInt(100))
+
+    if (trades instanceof Trade || trades instanceof V3Trade) {
+      return trades.priceImpact.greaterThan(FIFTY_PERCENT)
+    } else if (Array.isArray(trades)) {
+      for (const trade of trades) {
+        if (trade instanceof V3Trade && trade.priceImpact.greaterThan(FIFTY_PERCENT)) {
+          return true
+        }
+      }
+    }
+    return false
   }
 
   private static getPositionAmounts(
