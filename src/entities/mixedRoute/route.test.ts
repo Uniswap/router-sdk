@@ -4,7 +4,7 @@ import { MixedRoute, RouteV3 } from '../route'
 import { Protocol } from '../protocol'
 import { Route as V2RouteSDK, Pair } from '@uniswap/v2-sdk'
 import { MixedRouteSDK } from './route'
-import { divideMixedRouteIntoConsecutiveSections } from '../../utils'
+import { partitionMixedRouteByProtocol } from '../../utils'
 
 describe('MixedRoute', () => {
   const ETHER = Ether.onChain(1)
@@ -410,16 +410,16 @@ describe('MixedRoute', () => {
   describe('divideMixedRouteIntoConsecutiveSections', () => {
     it('returns correct for single pool', () => {
       const route = new MixedRouteSDK([pool_0_1], token0, token1)
-      expect(divideMixedRouteIntoConsecutiveSections(route)).toStrictEqual([[pool_0_1]])
+      expect(partitionMixedRouteByProtocol(route)).toStrictEqual([[pool_0_1]])
     })
     it('returns correct for single pool', () => {
       const route = new MixedRouteSDK([pair_0_1], token0, token1)
-      expect(divideMixedRouteIntoConsecutiveSections(route)).toStrictEqual([[pair_0_1]])
+      expect(partitionMixedRouteByProtocol(route)).toStrictEqual([[pair_0_1]])
     })
 
     it('returns correct for route of all the v3 pools', () => {
       const route = new MixedRouteSDK([pool_0_1, pool_1_weth, pool_2_weth], token0, token2)
-      const result = divideMixedRouteIntoConsecutiveSections(route)
+      const result = partitionMixedRouteByProtocol(route)
       expect(result.length).toEqual(1)
       expect(result[0].length).toEqual(3)
       expect(result).toStrictEqual([[pool_0_1, pool_1_weth, pool_2_weth]])
@@ -431,7 +431,7 @@ describe('MixedRoute', () => {
         token0,
         token3
       )
-      const result = divideMixedRouteIntoConsecutiveSections(route)
+      const result = partitionMixedRouteByProtocol(route)
       expect(result.length).toEqual(3)
       expect(result[0][0]).toStrictEqual(pool_0_1)
       expect(result[1].length).toEqual(2)
@@ -447,7 +447,7 @@ describe('MixedRoute', () => {
         token0,
         token3
       )
-      const result = divideMixedRouteIntoConsecutiveSections(route)
+      const result = partitionMixedRouteByProtocol(route)
       expect(result.length).toEqual(2)
       expect(result[0][0]).toStrictEqual(pool_0_1)
       const referenceSecondPart = [pair_1_weth, pair_weth_2, pair_2_3]
@@ -461,7 +461,7 @@ describe('MixedRoute', () => {
         token0,
         token3
       )
-      const result = divideMixedRouteIntoConsecutiveSections(route)
+      const result = partitionMixedRouteByProtocol(route)
       expect(result.length).toEqual(2)
       const referenceFirstPart = [pair_0_1, pair_1_weth, pair_weth_2]
       result[0].forEach((pair, i) => {

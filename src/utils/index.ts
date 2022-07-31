@@ -8,9 +8,7 @@ import { MixedRouteSDK } from '../entities/mixedRoute/route'
  * @param route
  * @returns a nested array of Pools or Pairs in the order of the route
  */
-export const divideMixedRouteIntoConsecutiveSections = (
-  route: MixedRouteSDK<Currency, Currency>
-): (Pool | Pair)[][] => {
+export const partitionMixedRouteByProtocol = (route: MixedRouteSDK<Currency, Currency>): (Pool | Pair)[][] => {
   let acc = []
 
   let left = 0

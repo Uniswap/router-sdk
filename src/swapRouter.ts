@@ -26,7 +26,7 @@ import { PaymentsExtended } from './paymentsExtended'
 import { MixedRouteTrade } from './entities/mixedRoute/trade'
 import { encodeMixedRouteToPath } from './utils/encodeMixedRouteToPath'
 import { MixedRouteSDK } from './entities/mixedRoute/route'
-import { divideMixedRouteIntoConsecutiveSections, getOutputOfPools } from './utils'
+import { partitionMixedRouteByProtocol, getOutputOfPools } from './utils'
 
 const ZERO = JSBI.BigInt(0)
 
@@ -255,7 +255,7 @@ export abstract class SwapRouter {
           calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactTokensForTokens', exactInputParams))
         }
       } else {
-        const sections = divideMixedRouteIntoConsecutiveSections(route)
+        const sections = partitionMixedRouteByProtocol(route)
 
         const isLastSectionInRoute = (i: number) => {
           return i === sections.length - 1
@@ -275,12 +275,12 @@ export abstract class SwapRouter {
             outputToken
           )
           const newRoute = new MixedRoute(newRouteOriginal)
-          const path: string = encodeMixedRouteToPath(newRoute)
 
           /// Previous output is now input
           inputToken = outputToken
 
           if (mixedRouteIsAllV3(newRoute)) {
+            const path: string = encodeMixedRouteToPath(newRoute)
             const exactInputParams = {
               path,
               // By default router holds funds until the last swap, then it is sent to the recipient
