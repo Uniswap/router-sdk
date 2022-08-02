@@ -24,6 +24,7 @@ import { MulticallExtended, Validation } from './multicallExtended'
 import { PaymentsExtended } from './paymentsExtended'
 
 const ZERO = JSBI.BigInt(0)
+const REFUND_ETH_PRICE_IMPACT_THRESHOLD = new Percent(JSBI.BigInt(50), JSBI.BigInt(100))
 
 /**
  * Options for producing the arguments to send calls to the router.
@@ -359,7 +360,8 @@ export abstract class SwapRouter {
       }
     }
 
-    // must refund when paying in ETH but with an uncertain input amount OR if there's a chance of a partial fill
+    // must refund when paying in ETH: either with an uncertain input amount OR if there's a chance of a partial fill.
+    // unlike ERC20's, the full ETH value must be sent in the transaction, so the rest must be refunded.
     if (inputIsNative && (sampleTrade.tradeType === TradeType.EXACT_OUTPUT || SwapRouter.riskOfPartialFill(trades))) {
       calldatas.push(Payments.encodeRefundETH())
     }
@@ -467,20 +469,24 @@ export abstract class SwapRouter {
     }
   }
 
-  // if slippage is very high, there's a chance of hitting max/min prices resulting in a partial fill of the swap
+  // if price impact is very high, there's a chance of hitting max/min prices resulting in a partial fill of the swap
   private static riskOfPartialFill(trades: AnyTradeType): boolean {
-    const FIFTY_PERCENT = new Percent(JSBI.BigInt(50), JSBI.BigInt(100))
-
-    if (trades instanceof Trade || trades instanceof V3Trade) {
-      return trades.priceImpact.greaterThan(FIFTY_PERCENT)
-    } else if (Array.isArray(trades)) {
-      for (const trade of trades) {
-        if (trade instanceof V3Trade && trade.priceImpact.greaterThan(FIFTY_PERCENT)) {
-          return true
-        }
-      }
+    if (Array.isArray(trades)) {
+      return trades.some((trade) => {
+        return SwapRouter.v3TradeWithHighPriceImpact(trade)
+      })
+    } else {
+      return SwapRouter.v3TradeWithHighPriceImpact(trades)
     }
-    return false
+  }
+
+  private static v3TradeWithHighPriceImpact(
+    trade:
+      | Trade<Currency, Currency, TradeType>
+      | V2Trade<Currency, Currency, TradeType>
+      | V3Trade<Currency, Currency, TradeType>
+  ): boolean {
+    return !(trade instanceof V2Trade) && trade.priceImpact.greaterThan(REFUND_ETH_PRICE_IMPACT_THRESHOLD)
   }
 
   private static getPositionAmounts(
