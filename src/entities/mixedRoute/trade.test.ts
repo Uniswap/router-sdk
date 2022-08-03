@@ -413,44 +413,89 @@ describe('MixedRouteTrade', () => {
     })
 
     describe('#priceImpact', () => {
-      describe('tradeType = EXACT_INPUT', () => {
-        const exactIn = MixedRouteTrade.createUncheckedTradeWithMultipleRoutes({
-          routes: [
-            {
-              route: new MixedRouteSDK([pool_0_1, pool_1_2], token0, token2),
-              inputAmount: CurrencyAmount.fromRawAmount(token0, 100),
-              outputAmount: CurrencyAmount.fromRawAmount(token2, 69),
-            },
-          ],
-          tradeType: TradeType.EXACT_INPUT,
-        })
-        const exactInMultipleRoutes = MixedRouteTrade.createUncheckedTradeWithMultipleRoutes({
-          routes: [
-            {
-              route: new MixedRouteSDK([pool_0_1, pool_1_2], token0, token2),
-              inputAmount: CurrencyAmount.fromRawAmount(token0, 90),
-              outputAmount: CurrencyAmount.fromRawAmount(token2, 62),
-            },
-            {
-              route: new MixedRouteSDK([pool_0_2], token0, token2),
-              inputAmount: CurrencyAmount.fromRawAmount(token0, 10),
-              outputAmount: CurrencyAmount.fromRawAmount(token2, 7),
-            },
-          ],
-          tradeType: TradeType.EXACT_INPUT,
-        })
-        it('is cached', () => {
-          expect(exactIn.priceImpact === exactIn.priceImpact).toStrictEqual(true)
-        })
-        it('is correct', () => {
-          expect(exactIn.priceImpact.toSignificant(3)).toEqual('17.2')
-        })
+      describe('100% v3 route', () => {
+        describe('tradeType = EXACT_INPUT', () => {
+          const exactIn = MixedRouteTrade.createUncheckedTradeWithMultipleRoutes({
+            routes: [
+              {
+                route: new MixedRouteSDK([pool_0_1, pool_1_2], token0, token2),
+                inputAmount: CurrencyAmount.fromRawAmount(token0, 100),
+                outputAmount: CurrencyAmount.fromRawAmount(token2, 69),
+              },
+            ],
+            tradeType: TradeType.EXACT_INPUT,
+          })
+          const exactInMultipleRoutes = MixedRouteTrade.createUncheckedTradeWithMultipleRoutes({
+            routes: [
+              {
+                route: new MixedRouteSDK([pool_0_1, pool_1_2], token0, token2),
+                inputAmount: CurrencyAmount.fromRawAmount(token0, 90),
+                outputAmount: CurrencyAmount.fromRawAmount(token2, 62),
+              },
+              {
+                route: new MixedRouteSDK([pool_0_2], token0, token2),
+                inputAmount: CurrencyAmount.fromRawAmount(token0, 10),
+                outputAmount: CurrencyAmount.fromRawAmount(token2, 7),
+              },
+            ],
+            tradeType: TradeType.EXACT_INPUT,
+          })
+          it('is cached', () => {
+            expect(exactIn.priceImpact === exactIn.priceImpact).toStrictEqual(true)
+          })
+          it('is correct', () => {
+            expect(exactIn.priceImpact.toSignificant(3)).toEqual('17.2')
+          })
 
-        it('is cached with multiple routes', () => {
-          expect(exactInMultipleRoutes.priceImpact === exactInMultipleRoutes.priceImpact).toStrictEqual(true)
+          it('is cached with multiple routes', () => {
+            expect(exactInMultipleRoutes.priceImpact === exactInMultipleRoutes.priceImpact).toStrictEqual(true)
+          })
+          it('is correct with multiple routes', async () => {
+            expect(exactInMultipleRoutes.priceImpact.toSignificant(3)).toEqual('19.8')
+          })
         })
-        it('is correct with multiple routes', async () => {
-          expect(exactInMultipleRoutes.priceImpact.toSignificant(3)).toEqual('19.8')
+      })
+
+      describe('mixed route', () => {
+        describe('tradeType = EXACT_INPUT', () => {
+          const exactIn = MixedRouteTrade.createUncheckedTradeWithMultipleRoutes({
+            routes: [
+              {
+                route: new MixedRouteSDK([pool_0_1, pair_1_2], token0, token2),
+                inputAmount: CurrencyAmount.fromRawAmount(token0, 100),
+                outputAmount: CurrencyAmount.fromRawAmount(token2, 69),
+              },
+            ],
+            tradeType: TradeType.EXACT_INPUT,
+          })
+          const exactInMultipleRoutes = MixedRouteTrade.createUncheckedTradeWithMultipleRoutes({
+            routes: [
+              {
+                route: new MixedRouteSDK([pool_0_1, pair_1_2], token0, token2),
+                inputAmount: CurrencyAmount.fromRawAmount(token0, 90),
+                outputAmount: CurrencyAmount.fromRawAmount(token2, 62),
+              },
+              {
+                route: new MixedRouteSDK([pool_0_2], token0, token2),
+                inputAmount: CurrencyAmount.fromRawAmount(token0, 10),
+                outputAmount: CurrencyAmount.fromRawAmount(token2, 7),
+              },
+            ],
+            tradeType: TradeType.EXACT_INPUT,
+          })
+          it('is cached', () => {
+            expect(exactIn.priceImpact === exactIn.priceImpact).toStrictEqual(true)
+          })
+          it('is correct', () => {
+            expect(exactIn.priceImpact.toSignificant(3)).toEqual('17.2')
+          })
+
+          it('is cached with multiple routes', () => {
+            expect(exactInMultipleRoutes.priceImpact === exactInMultipleRoutes.priceImpact).toStrictEqual(true)
+          })
+          it('is correct with multiple routes', async () => {
+            expect(exactInMultipleRoutes.priceImpact.toSignificant(3)).toEqual('19.8')
+          })
         })
       })
     })

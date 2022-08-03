@@ -407,7 +407,7 @@ describe('MixedRoute', () => {
     })
   })
 
-  describe('divideMixedRouteIntoConsecutiveSections', () => {
+  describe('partitionMixedRouteByProtocol', () => {
     it('returns correct for single pool', () => {
       const route = new MixedRouteSDK([pool_0_1], token0, token1)
       expect(partitionMixedRouteByProtocol(route)).toStrictEqual([[pool_0_1]])
