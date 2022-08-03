@@ -29,6 +29,7 @@ import { MixedRouteSDK } from './entities/mixedRoute/route'
 import { partitionMixedRouteByProtocol, getOutputOfPools } from './utils'
 
 const ZERO = JSBI.BigInt(0)
+const REFUND_ETH_PRICE_IMPACT_THRESHOLD = new Percent(JSBI.BigInt(50), JSBI.BigInt(100))
 
 /**
  * Options for producing the arguments to send calls to the router.
@@ -66,6 +67,17 @@ export interface SwapAndAddOptions extends SwapOptions {
    */
   outputTokenPermit?: PermitOptions
 }
+
+type AnyTradeType =
+  | Trade<Currency, Currency, TradeType>
+  | V2Trade<Currency, Currency, TradeType>
+  | V3Trade<Currency, Currency, TradeType>
+  | MixedRouteTrade<Currency, Currency, TradeType>
+  | (
+      | V2Trade<Currency, Currency, TradeType>
+      | V3Trade<Currency, Currency, TradeType>
+      | MixedRouteTrade<Currency, Currency, TradeType>
+    )[]
 
 /**
  * Represents the Uniswap V2 + V3 SwapRouter02, and has static methods for helping execute trades.
@@ -310,16 +322,7 @@ export abstract class SwapRouter {
   }
 
   private static encodeSwaps(
-    trades:
-      | Trade<Currency, Currency, TradeType>
-      | V2Trade<Currency, Currency, TradeType>
-      | V3Trade<Currency, Currency, TradeType>
-      | MixedRouteTrade<Currency, Currency, TradeType>
-      | (
-          | V2Trade<Currency, Currency, TradeType>
-          | V3Trade<Currency, Currency, TradeType>
-          | MixedRouteTrade<Currency, Currency, TradeType>
-        )[],
+    trades: AnyTradeType,
     options: SwapOptions,
     isSwapAndAdd?: boolean
   ): {
@@ -537,8 +540,9 @@ export abstract class SwapRouter {
       }
     }
 
-    // must refund when paying in ETH, but with an uncertain input amount
-    if (inputIsNative && sampleTrade.tradeType === TradeType.EXACT_OUTPUT) {
+    // must refund when paying in ETH: either with an uncertain input amount OR if there's a chance of a partial fill.
+    // unlike ERC20's, the full ETH value must be sent in the transaction, so the rest must be refunded.
+    if (inputIsNative && (sampleTrade.tradeType === TradeType.EXACT_OUTPUT || SwapRouter.riskOfPartialFill(trades))) {
       calldatas.push(Payments.encodeRefundETH())
     }
 
@@ -554,16 +558,7 @@ export abstract class SwapRouter {
    * @param options options for the call parameters
    */
   public static swapAndAddCallParameters(
-    trades:
-      | Trade<Currency, Currency, TradeType>
-      | V2Trade<Currency, Currency, TradeType>
-      | V3Trade<Currency, Currency, TradeType>
-      | MixedRouteTrade<Currency, Currency, TradeType>
-      | (
-          | V2Trade<Currency, Currency, TradeType>
-          | V3Trade<Currency, Currency, TradeType>
-          | MixedRouteTrade<Currency, Currency, TradeType>
-        )[],
+    trades: AnyTradeType,
     options: SwapAndAddOptions,
     position: Position,
     addLiquidityOptions: CondensedAddLiquidityOptions,
@@ -652,6 +647,27 @@ export abstract class SwapRouter {
       calldata: MulticallExtended.encodeMulticall(calldatas, options.deadlineOrPreviousBlockhash),
       value: value.toString(),
     }
+  }
+
+  // if price impact is very high, there's a chance of hitting max/min prices resulting in a partial fill of the swap
+  private static riskOfPartialFill(trades: AnyTradeType): boolean {
+    if (Array.isArray(trades)) {
+      return trades.some((trade) => {
+        return SwapRouter.v3TradeWithHighPriceImpact(trade)
+      })
+    } else {
+      return SwapRouter.v3TradeWithHighPriceImpact(trades)
+    }
+  }
+
+  private static v3TradeWithHighPriceImpact(
+    trade:
+      | Trade<Currency, Currency, TradeType>
+      | V2Trade<Currency, Currency, TradeType>
+      | V3Trade<Currency, Currency, TradeType>
+      | MixedRouteTrade<Currency, Currency, TradeType>
+  ): boolean {
+    return !(trade instanceof V2Trade) && trade.priceImpact.greaterThan(REFUND_ETH_PRICE_IMPACT_THRESHOLD)
   }
 
   private static getPositionAmounts(
