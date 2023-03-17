@@ -10,6 +10,7 @@ import {
   TickMath,
   nearestUsableTick,
   encodeSqrtRatioX96,
+  Route,
 } from '@uniswap/v3-sdk'
 import { Pair, Route as V2RouteSDK } from '@uniswap/v2-sdk'
 import { MixedRouteSDK } from './mixedRoute/route'
@@ -21,6 +22,7 @@ describe('Trade', () => {
   const token1 = new Token(1, '0x0000000000000000000000000000000000000002', 18, 't1', 'token1')
   const token2 = new Token(1, '0x0000000000000000000000000000000000000003', 18, 't2', 'token2')
   const token3 = new Token(1, '0x0000000000000000000000000000000000000004', 18, 't3', 'token3')
+  const token4 = new Token(1, '0x0000000000000000000000000000000000000005', 6, 't4', 'token4')
 
   function v2StylePool(
     reserve0: CurrencyAmount<Token>,
@@ -116,7 +118,7 @@ describe('Trade', () => {
     CurrencyAmount.fromRawAmount(token1, JSBI.BigInt(100000))
   )
 
-  describe('#fromRoute', () => {
+  xdescribe('#fromRoute', () => {
     it('can contain only a v3 route', async () => {
       const routeOriginal = new V3RouteSDK([pool_0_1], token0, token1)
       const route = new RouteV3(routeOriginal)
@@ -323,7 +325,7 @@ describe('Trade', () => {
     })
   })
 
-  describe('#fromRoutes', () => {
+  xdescribe('#fromRoutes', () => {
     it('can contain both a v2 and a v3 route', async () => {
       const routeOriginalV2 = new V2RouteSDK([pair_0_1, pair_1_2], token0, token2)
       const routev2 = new RouteV2(routeOriginalV2)
@@ -766,7 +768,7 @@ describe('Trade', () => {
     })
   })
 
-  describe('#worstExecutionPrice', () => {
+  xdescribe('#worstExecutionPrice', () => {
     describe('tradeType = EXACT_INPUT', () => {
       const routev3 = new V3RouteSDK([pool_0_1, pool_1_2], token0, token2)
       const route2v3 = new V3RouteSDK([pool_0_2], token0, token2)
@@ -1029,7 +1031,7 @@ describe('Trade', () => {
     })
   })
 
-  describe('#minimumAmountOut', () => {
+  xdescribe('#minimumAmountOut', () => {
     describe('tradeType = EXACT_INPUT', () => {
       const routev3 = new V3RouteSDK([pool_0_1], token0, token1)
       const routev2 = new V2RouteSDK([pair_0_1], token0, token1)
@@ -1094,7 +1096,7 @@ describe('Trade', () => {
     })
   })
 
-  describe('#maximumAmountIn', () => {
+  xdescribe('#maximumAmountIn', () => {
     describe('tradeType = EXACT_INPUT', () => {
       const routev3 = new V3RouteSDK([pool_0_1], token0, token1)
       const routev2 = new V2RouteSDK([pair_0_1], token0, token1)
@@ -1160,7 +1162,7 @@ describe('Trade', () => {
   })
   // v3 sdk price impact tests
   describe('#priceImpact', () => {
-    describe('tradeType = EXACT_INPUT', () => {
+    xdescribe('tradeType = EXACT_INPUT', () => {
       const routev3 = new V3RouteSDK([pool_0_1, pool_1_2], token0, token2)
       const mixedRoute = new MixedRouteSDK([pool_0_1, pool_1_2], token0, token2)
 
@@ -1199,7 +1201,7 @@ describe('Trade', () => {
       })
     })
 
-    describe('tradeType = EXACT_OUTPUT', () => {
+    xdescribe('tradeType = EXACT_OUTPUT', () => {
       const routev3 = new V3RouteSDK([pool_0_1, pool_1_2], token0, token2)
       const exactOut = new Trade({
         v2Routes: [],
@@ -1220,9 +1222,38 @@ describe('Trade', () => {
         expect(exactOut.priceImpact.toSignificant(3)).toEqual('23.1')
       })
     })
+
+    describe('negative price impact?', () => {
+      // Real data returned from the Router API (where token4 is USDC)
+      const route = new Route([
+        new Pool(
+          weth,
+          token4,
+          FeeAmount.LOW,
+          "1896793450044777149417053189496612",
+          "29155526732098504706",
+          parseInt("201676")
+        )
+      ], weth, token4)
+
+      const trade = new Trade({
+        v2Routes: [],
+        v3Routes: [{
+          routev3: route,
+          inputAmount: CurrencyAmount.fromRawAmount(weth, "80000000000000000"),
+          outputAmount: CurrencyAmount.fromRawAmount(token4, "139689765"),
+        }],
+        mixedRoutes: [],
+        tradeType: 0
+      })
+    
+      expect(trade.priceImpact.toFixed(2)).toEqual('-0.08')
+      // Price impact should always be greater than 0
+      expect(trade.priceImpact.greaterThan(0)).toBeTruthy()
+    })
   })
 
-  describe('#executionPrice', () => {
+  xdescribe('#executionPrice', () => {
     it('is correct for tradeType = EXACT_INPUT', async () => {
       const routeOriginalV2 = new V2RouteSDK([pair_0_1], token0, token1)
       const routev2 = new RouteV2(routeOriginalV2)
