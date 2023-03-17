@@ -1225,28 +1225,34 @@ describe('Trade', () => {
 
     describe('negative price impact?', () => {
       // Real data returned from the Router API (where token4 is USDC)
-      const route = new Route([
-        new Pool(
-          weth,
-          token4,
-          FeeAmount.LOW,
-          "1896793450044777149417053189496612",
-          "29155526732098504706",
-          parseInt("201676")
-        )
-      ], weth, token4)
+      const route = new Route(
+        [
+          new Pool(
+            weth,
+            token4,
+            FeeAmount.LOW,
+            '1896793450044777149417053189496612',
+            '29155526732098504706',
+            parseInt('201676')
+          ),
+        ],
+        weth,
+        token4
+      )
 
       const trade = new Trade({
         v2Routes: [],
-        v3Routes: [{
-          routev3: route,
-          inputAmount: CurrencyAmount.fromRawAmount(weth, "80000000000000000"),
-          outputAmount: CurrencyAmount.fromRawAmount(token4, "139689765"),
-        }],
+        v3Routes: [
+          {
+            routev3: route,
+            inputAmount: CurrencyAmount.fromRawAmount(weth, '80000000000000000'),
+            outputAmount: CurrencyAmount.fromRawAmount(token4, '139689765'),
+          },
+        ],
         mixedRoutes: [],
-        tradeType: 0
+        tradeType: 0,
       })
-    
+
       expect(trade.priceImpact.toFixed(2)).toEqual('-0.08')
       // Price impact should always be greater than 0
       expect(trade.priceImpact.greaterThan(0)).toBeTruthy()
