@@ -189,14 +189,12 @@ export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType
    * @returns The amount out
    */
   public minimumAmountOut(slippageTolerance: Percent, amountOut = this.outputAmount): CurrencyAmount<TOutput> {
-    invariant(!slippageTolerance.lessThan(ZERO), 'SLIPPAGE_TOLERANCE')
+    invariant(!(slippageTolerance.lessThan(ZERO) || slippageTolerance.greaterThan(ONE)), 'SLIPPAGE_TOLERANCE')
     if (this.tradeType === TradeType.EXACT_OUTPUT) {
       return amountOut
     } else {
-      const slippageAdjustedAmountOut = new Fraction(ONE)
-        .add(slippageTolerance)
-        .invert()
-        .multiply(amountOut.quotient).quotient
+      const slippageAdjustedAmountOut = new Fraction(ONE).subtract(slippageTolerance).multiply(amountOut).quotient
+
       return CurrencyAmount.fromRawAmount(amountOut.currency, slippageAdjustedAmountOut)
     }
   }

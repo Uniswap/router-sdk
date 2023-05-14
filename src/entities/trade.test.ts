@@ -830,6 +830,10 @@ describe('Trade', () => {
         expect(() => exactInV3.worstExecutionPrice(new Percent(-1, 100))).toThrow('SLIPPAGE_TOLERANCE')
         expect(() => exactInMixed.worstExecutionPrice(new Percent(-1, 100))).toThrow('SLIPPAGE_TOLERANCE')
       })
+      it('throws if greater than 100%', () => {
+        expect(() => exactInV3.worstExecutionPrice(new Percent(200, 100))).toThrow('SLIPPAGE_TOLERANCE')
+        expect(() => exactInMixed.worstExecutionPrice(new Percent(200, 100))).toThrow('SLIPPAGE_TOLERANCE')
+      })
       it('returns exact if 0', () => {
         expect(exactInV3.worstExecutionPrice(new Percent(0, 100))).toEqual(exactInV3.executionPrice)
         expect(exactInMixed.worstExecutionPrice(new Percent(0, 100))).toEqual(exactInV3.executionPrice)
@@ -837,23 +841,17 @@ describe('Trade', () => {
       it('returns exact if nonzero', () => {
         expect(exactInV3.worstExecutionPrice(new Percent(0, 100))).toEqual(new Price(token0, token2, 100, 69))
         expect(exactInV3.worstExecutionPrice(new Percent(5, 100))).toEqual(new Price(token0, token2, 100, 65))
-        expect(exactInV3.worstExecutionPrice(new Percent(200, 100))).toEqual(new Price(token0, token2, 100, 23))
         expect(exactInMixed.worstExecutionPrice(new Percent(0, 100))).toEqual(new Price(token0, token2, 100, 69))
         expect(exactInMixed.worstExecutionPrice(new Percent(5, 100))).toEqual(new Price(token0, token2, 100, 65))
-        expect(exactInMixed.worstExecutionPrice(new Percent(200, 100))).toEqual(new Price(token0, token2, 100, 23))
       })
       it('returns exact if nonzero with multiple routes', () => {
         expect(exactInMultiRoute.worstExecutionPrice(new Percent(0, 100))).toEqual(new Price(token0, token2, 100, 69))
         expect(exactInMultiRoute.worstExecutionPrice(new Percent(5, 100))).toEqual(new Price(token0, token2, 100, 65))
-        expect(exactInMultiRoute.worstExecutionPrice(new Percent(200, 100))).toEqual(new Price(token0, token2, 100, 23))
         expect(exactInMultiMixedRoute.worstExecutionPrice(new Percent(0, 100))).toEqual(
           new Price(token0, token2, 100, 69)
         )
         expect(exactInMultiMixedRoute.worstExecutionPrice(new Percent(5, 100))).toEqual(
           new Price(token0, token2, 100, 65)
-        )
-        expect(exactInMultiMixedRoute.worstExecutionPrice(new Percent(200, 100))).toEqual(
-          new Price(token0, token2, 100, 23)
         )
       })
     })
@@ -894,6 +892,9 @@ describe('Trade', () => {
       it('throws if less than 0', () => {
         expect(() => exactOut.worstExecutionPrice(new Percent(-1, 100))).toThrow('SLIPPAGE_TOLERANCE')
       })
+      it('throws if greater than 100%', () => {
+        expect(() => exactOut.worstExecutionPrice(new Percent(200, 100))).toThrow('SLIPPAGE_TOLERANCE')
+      })
       it('returns exact if 0', () => {
         expect(exactOut.worstExecutionPrice(new Percent(0, 100))).toEqual(exactOut.executionPrice)
       })
@@ -904,9 +905,6 @@ describe('Trade', () => {
         expect(
           exactOut.worstExecutionPrice(new Percent(5, 100)).equalTo(new Price(token0, token2, 163, 100))
         ).toBeTruthy()
-        expect(
-          exactOut.worstExecutionPrice(new Percent(200, 100)).equalTo(new Price(token0, token2, 468, 100))
-        ).toBeTruthy()
       })
       it('returns exact if nonzero with multiple routes', () => {
         expect(
@@ -914,9 +912,6 @@ describe('Trade', () => {
         ).toBeTruthy()
         expect(
           exactOutMultiRoute.worstExecutionPrice(new Percent(5, 100)).equalTo(new Price(token0, token2, 163, 100))
-        ).toBeTruthy()
-        expect(
-          exactOutMultiRoute.worstExecutionPrice(new Percent(200, 100)).equalTo(new Price(token0, token2, 468, 100))
         ).toBeTruthy()
       })
     })
@@ -952,13 +947,15 @@ describe('Trade', () => {
       it('throws if less than 0', () => {
         expect(() => exactIn.worstExecutionPrice(new Percent(-1, 100))).toThrow('SLIPPAGE_TOLERANCE')
       })
+      it('throws if greater than 100%', () => {
+        expect(() => exactIn.worstExecutionPrice(new Percent(200, 100))).toThrow('SLIPPAGE_TOLERANCE')
+      })
       it('returns exact if 0', () => {
         expect(exactIn.worstExecutionPrice(new Percent(0, 100))).toEqual(exactIn.executionPrice)
       })
       it('returns exact if nonzero', () => {
         expect(exactIn.worstExecutionPrice(new Percent(0, 100))).toEqual(new Price(token0, token2, 350, 250))
-        expect(exactIn.worstExecutionPrice(new Percent(5, 100))).toEqual(new Price(token0, token2, 350, 238))
-        expect(exactIn.worstExecutionPrice(new Percent(200, 100))).toEqual(new Price(token0, token2, 350, 83))
+        expect(exactIn.worstExecutionPrice(new Percent(5, 100))).toEqual(new Price(token0, token2, 350, 237))
       })
     })
 
@@ -985,13 +982,15 @@ describe('Trade', () => {
       it('throws if less than 0', () => {
         expect(() => exactIn.worstExecutionPrice(new Percent(-1, 100))).toThrow('SLIPPAGE_TOLERANCE')
       })
+      it('throws if greater than 100%', () => {
+        expect(() => exactIn.worstExecutionPrice(new Percent(200, 100))).toThrow('SLIPPAGE_TOLERANCE')
+      })
       it('returns exact if 0', () => {
         expect(exactIn.worstExecutionPrice(new Percent(0, 100))).toEqual(exactIn.executionPrice)
       })
       it('returns exact if nonzero', () => {
         expect(exactIn.worstExecutionPrice(new Percent(0, 100))).toEqual(new Price(token0, token2, 256, 200))
         expect(exactIn.worstExecutionPrice(new Percent(5, 100))).toEqual(new Price(token0, token2, 256, 190))
-        expect(exactIn.worstExecutionPrice(new Percent(200, 100))).toEqual(new Price(token0, token2, 256, 66))
       })
     })
 
@@ -1018,13 +1017,15 @@ describe('Trade', () => {
       it('throws if less than 0', () => {
         expect(() => exactOut.worstExecutionPrice(new Percent(-1, 100))).toThrow('SLIPPAGE_TOLERANCE')
       })
+      it('throws if greater than 100%', () => {
+        expect(() => exactOut.worstExecutionPrice(new Percent(200, 100))).toThrow('SLIPPAGE_TOLERANCE')
+      })
       it('returns exact if 0', () => {
         expect(exactOut.worstExecutionPrice(new Percent(0, 100))).toEqual(exactOut.executionPrice)
       })
       it('returns exact if nonzero', () => {
         expect(exactOut.worstExecutionPrice(new Percent(0, 100))).toEqual(new Price(token0, token2, 256, 200))
         expect(exactOut.worstExecutionPrice(new Percent(5, 100))).toEqual(new Price(token0, token2, 268, 200))
-        expect(exactOut.worstExecutionPrice(new Percent(200, 100))).toEqual(new Price(token0, token2, 768, 200))
       })
     })
   })
@@ -1049,7 +1050,9 @@ describe('Trade', () => {
       it('throws if less than 0', () => {
         expect(() => trade.minimumAmountOut(new Percent(JSBI.BigInt(-1), 100))).toThrow('SLIPPAGE_TOLERANCE')
       })
-
+      it('throws if greater than 100%', () => {
+        expect(() => trade.minimumAmountOut(new Percent(JSBI.BigInt(-1), 100))).toThrow('SLIPPAGE_TOLERANCE')
+      })
       it('returns exact if 0', () => {
         expect(trade.minimumAmountOut(new Percent(JSBI.BigInt(0), 100))).toEqual(trade.outputAmount)
       })
@@ -1057,9 +1060,6 @@ describe('Trade', () => {
       it('returns exact if nonzero', () => {
         expect(trade.minimumAmountOut(new Percent(JSBI.BigInt(5), 100))).toEqual(
           CurrencyAmount.fromRawAmount(token1, 285) // 300 * 0.95
-        )
-        expect(trade.minimumAmountOut(new Percent(JSBI.BigInt(200), 100))).toEqual(
-          CurrencyAmount.fromRawAmount(token1, 100)
         )
       })
 
