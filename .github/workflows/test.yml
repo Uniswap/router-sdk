@@ -1,0 +1,34 @@
+name: Test
+
+# This workflow will run automatically on every PR against `main` branch. It can be also trigerred
+# manually via the Github UI.
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/setup
+      - run: yarn lint
+
+  deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/setup
+      - run: yarn deduplicate
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/setup
+      - run: yarn test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/setup
+      - run: yarn build
