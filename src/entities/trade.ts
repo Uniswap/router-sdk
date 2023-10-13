@@ -83,7 +83,7 @@ export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType
     }
 
     if (this.swaps.length === 0) {
-      throw new Error("No routes provided when calling Trade constructor")
+      throw new Error('No routes provided when calling Trade constructor')
     }
 
     this.tradeType = tradeType
