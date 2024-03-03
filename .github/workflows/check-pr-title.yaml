@@ -1,0 +1,21 @@
+# This workflow will check the pull request title for a valid semantic commit message
+# For more information see: https://semantic-release.gitbook.io/semantic-release/#commit-message-format
+name: Check PR Title
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+
+permissions:
+  pull-requests: read
+
+jobs:
+  check-pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5.2.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
