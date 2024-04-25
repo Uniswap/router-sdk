@@ -1,10 +1,7 @@
-# Alpha software
+# @uniswap/router-sdk - Now at `Uniswap/sdks`
 
-The latest version of the SDK is used in production in the Uniswap Interface,
-but it is considered Alpha software and may contain bugs or change significantly between patch versions.
-If you have questions about how to use the SDK, please reach out in the `#dev-chat` channel of the Discord.
-Pull requests welcome!
+All versions after 1.9.0 of this SDK can be found in the [SDK monorepo](https://github.com/Uniswap/sdks/tree/main/sdks/router-sdk)! Please file all future issues, PR’s, and discussions there.
 
-# Uniswap Swap Router SDK
+### Old Issues and PR’s
 
-This SDK is meant to facilitate interactions with the contracts in [swap-router-contracts](https://github.com/Uniswap/swap-router-contracts).
+If you have an issue or open PR that is still active on this SDK in this repository, please recreate it in the new repository. Some existing issues and PR’s may be automatically migrated by the Uniswap Labs team.
